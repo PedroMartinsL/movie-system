@@ -1,16 +1,18 @@
 package com.pedromartinsl.dslist.services;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.pedromartinsl.dslist.dto.MovieDTO;
 import com.pedromartinsl.dslist.dto.MovieMinDTO;
 import com.pedromartinsl.dslist.entities.Movie;
-import com.pedromartinsl.dslist.projections.MovieMinProjection;
+import com.pedromartinsl.dslist.infrastructure.services.StorageService;
 import com.pedromartinsl.dslist.repositories.MovieRepository;
 
 
@@ -19,6 +21,9 @@ public class MovieService {
     
     @Autowired
 	private MovieRepository movieRepository;
+
+    @Autowired
+	private StorageService storageService;
 
 	@Transactional(readOnly = true)
 	public MovieDTO findById(@PathVariable Long listId) {
@@ -31,10 +36,33 @@ public class MovieService {
 		return result.stream().map(MovieMinDTO::new).toList();
 	}
 
-	@Transactional(readOnly = true)
-	public List<MovieMinDTO> findByMovieList(Long listId) {
-		List<MovieMinProjection> movies = movieRepository.searchByList(listId);
-		return movies.stream().map(MovieMinDTO::new).toList();
-	}
-	
+	 @Transactional
+    public MovieDTO createMovie(
+        String title,
+        String description,
+        Integer year,
+        MultipartFile video,
+        MultipartFile thumbnail
+    ) throws IOException {
+
+        String videoUrl =
+            storageService.upload(video);
+
+        String thumbnailUrl =
+            storageService.upload(thumbnail);
+
+        Movie movie = new Movie();
+
+        movie.setTitle(title);
+        movie.setYear(year);
+        movie.setDescription(description);
+
+        movie.setVideoUrl(videoUrl);
+        movie.setImgUrl(thumbnailUrl);
+
+        Movie saved =
+            movieRepository.save(movie);
+
+        return new MovieDTO(saved);
+    }
 }

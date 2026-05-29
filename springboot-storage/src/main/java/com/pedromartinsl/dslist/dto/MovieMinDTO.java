@@ -1,14 +1,13 @@
 package com.pedromartinsl.dslist.dto;
 
 import com.pedromartinsl.dslist.entities.Movie;
-import com.pedromartinsl.dslist.projections.MovieMinProjection;
 
 public class MovieMinDTO {
     private Long id;
 	private String title;
 	private Integer year;
 	private String imgUrl;
-	private String shortDescription;
+	private String description;
 
     public MovieMinDTO() {
 
@@ -19,15 +18,7 @@ public class MovieMinDTO {
 		title = entity.getTitle();
 		year = entity.getYear();
 		imgUrl = entity.getImgUrl();
-		shortDescription = entity.getShortDescription();
-	}
-
-	public MovieMinDTO(MovieMinProjection projection) {
-		id = projection.getId();
-		title = projection.getTitle();
-		year = projection.getMovieYear();
-		imgUrl = projection.getImgUrl();
-		shortDescription = projection.getShortDescription();
+		description = entity.getDescription();
 	}
 	
 	public Long getId() {
@@ -42,7 +33,7 @@ public class MovieMinDTO {
 	public String getImgUrl() {
 		return imgUrl;
 	}
-	public String getShortDescription() {
-		return shortDescription;
+	public String getDescription() {
+		return description;
 	}
 }

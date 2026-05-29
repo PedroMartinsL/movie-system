@@ -8,22 +8,18 @@ public class MovieDTO {
 	private String title;
 	private Integer year;
 	private String genre;
-	private String platforms;
-	private Double score;
 	private String imgUrl;
-	private String shortDescription;
-	private String longDescription;
+	private String description;
+	private String videoUrl;
 	
 	public MovieDTO(Movie entity) {
 		this.id = entity.getId();
 		this.title = entity.getTitle();
 		this.year = entity.getYear();
 		this.genre = entity.getGenre();
-		this.platforms = entity.getPlatforms();
-		this.score = entity.getScore();
 		this.imgUrl = entity.getImgUrl();
-		this.shortDescription = entity.getShortDescription();
-		this.longDescription = entity.getLongDescription();
+		this.description = entity.getDescription();
+		this.videoUrl = entity.getVideoUrl();
 	}
 	
 	public Long getId() {
@@ -50,34 +46,27 @@ public class MovieDTO {
 	public void setGenre(String genre) {
 		this.genre = genre;
 	}
-	public String getPlatforms() {
-		return platforms;
-	}
-	public void setPlatforms(String platforms) {
-		this.platforms = platforms;
-	}
-	public Double getScore() {
-		return score;
-	}
-	public void setScore(Double score) {
-		this.score = score;
-	}
 	public String getImgUrl() {
 		return imgUrl;
 	}
 	public void setImgUrl(String imgUrl) {
 		this.imgUrl = imgUrl;
 	}
-	public String getShortDescription() {
-		return shortDescription;
+
+	public String getDescription() {
+		return description;
 	}
-	public void setShortDescription(String shortDescription) {
-		this.shortDescription = shortDescription;
+
+	public void setDescription(String description) {
+		this.description = description;
 	}
-	public String getLongDescription() {
-		return longDescription;
+
+	public String getVideoUrl() {
+		return videoUrl;
 	}
-	public void setLongDescription(String longDescription) {
-		this.longDescription = longDescription;
+
+	public void setVideoUrl(String videoUrl) {
+		this.videoUrl = videoUrl;
 	}
+	
 }
