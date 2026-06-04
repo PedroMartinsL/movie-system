@@ -45,6 +45,7 @@ services:
     volumes:
       - ./fastapi-gateway:/app
     environment:
+      JWT_SECRET: ${JWT_SECRET}
       STORAGE_URL: ${STORAGE_URL}
       
   storage-spring:

@@ -1,6 +1,6 @@
 import httpx
 from fastapi import Request
-from config import settings
+from core.config import settings
 
 SERVICES = {
     "storage": settings.storage_url,
