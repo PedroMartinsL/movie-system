@@ -21,7 +21,7 @@ services:
 
   minio:
     image: minio/minio
-    container_name: minio
+    container_name: minio-movie-storage
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -40,18 +40,19 @@ services:
       
   app-spring:
     build:
-      context: .               
+      context: ./springboot-storage             
       dockerfile: Dockerfile     
     container_name: app-spring-boot
     ports:
       - "8080:8080"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-storage:5432/seu_banco_de_dados
-      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
-      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
-      - MINIO_ENDPOINT=http://minio:9000
-      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER}
-      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-storage:5432/${DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
     depends_on:
       postgres-storage:
         condition: service_healthy

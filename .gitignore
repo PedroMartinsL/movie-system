@@ -32,3 +32,17 @@ build/
 ### VS Code ###
 .vscode/
 .env
+
+# Docker volumes
+postgres-data/
+minio-data/
+
+# Spring
+springboot-storage/target/
+
+# IDEs
+.idea/
+.vscode/
+
+# Logs
+*.log
