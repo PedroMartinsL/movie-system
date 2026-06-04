@@ -37,12 +37,21 @@ services:
       timeout: 5s
       retries: 5
 
+  gateway:
+    build: ./fastapi-gateway
+    container_name: api-gateway
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./fastapi-gateway:/app
+    environment:
+      STORAGE_URL: ${STORAGE_URL}
       
-  app-spring:
+  storage-spring:
     build:
       context: ./springboot-storage             
       dockerfile: Dockerfile     
-    container_name: app-spring-boot
+    container_name: storage-spring-boot
     ports:
       - "8080:8080"
     environment:

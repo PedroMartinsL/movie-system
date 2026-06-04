@@ -46,3 +46,16 @@ springboot-storage/target/
 
 # Logs
 *.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+.venv/
+venv/
+
+.git/
+.idea/
+.vscode/
