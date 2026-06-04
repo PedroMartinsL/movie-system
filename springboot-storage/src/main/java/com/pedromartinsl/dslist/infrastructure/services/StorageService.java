@@ -24,28 +24,35 @@ public class StorageService {
     @Autowired
     private S3Client s3;
 
-    public String upload(MultipartFile file)
-        throws IOException {
+    public String upload(
+        MultipartFile file,
+        String folder
+    ) throws IOException {
 
-        String filename =
+        String fileName =
             UUID.randomUUID()
             + "-"
             + file.getOriginalFilename();
 
+        String key =
+            folder + "/" + fileName;
+
         s3.putObject(
             PutObjectRequest.builder()
                 .bucket(bucket)
-                .key(filename)
+                .key(key)
                 .contentType(file.getContentType())
                 .build(),
-
-            RequestBody.fromBytes(file.getBytes())
+            RequestBody.fromInputStream(
+                file.getInputStream(),
+                file.getSize()
+            )
         );
 
         return endpoint
             + "/"
             + bucket
             + "/"
-            + filename;
+            + key;
     }
 }

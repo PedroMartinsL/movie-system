@@ -20,7 +20,6 @@ public class Movie {
 	@Column(name = "movie_year")
 	private Integer year;
 	private String genre;
-	private Double score;
 	private String imgUrl;
 	private String videoUrl;
 	private String description;
@@ -61,12 +60,6 @@ public class Movie {
 	}
 	public void setGenre(String genre) {
 		this.genre = genre;
-	}
-	public Double getScore() {
-		return score;
-	}
-	public void setScore(Double score) {
-		this.score = score;
 	}
 	public String getImgUrl() {
 		return imgUrl;

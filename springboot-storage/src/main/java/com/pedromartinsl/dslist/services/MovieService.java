@@ -36,32 +36,39 @@ public class MovieService {
 		return result.stream().map(MovieMinDTO::new).toList();
 	}
 
-	 @Transactional
+	@Transactional
     public MovieDTO createMovie(
         String title,
-        String description,
         Integer year,
+        String genre,
+        String description,
         MultipartFile video,
         MultipartFile thumbnail
     ) throws IOException {
 
         String videoUrl =
-            storageService.upload(video);
+            storageService.upload(
+                video,
+                "videos"
+            );
 
         String thumbnailUrl =
-            storageService.upload(thumbnail);
+            storageService.upload(
+                thumbnail,
+                "thumbnails"
+            );
 
         Movie movie = new Movie();
 
         movie.setTitle(title);
         movie.setYear(year);
+        movie.setGenre(genre);
         movie.setDescription(description);
 
         movie.setVideoUrl(videoUrl);
         movie.setImgUrl(thumbnailUrl);
 
-        Movie saved =
-            movieRepository.save(movie);
+        Movie saved = movieRepository.save(movie);
 
         return new MovieDTO(saved);
     }
