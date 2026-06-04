@@ -14,7 +14,7 @@ class Settings:
 	"""
 
 	def __init__(self) -> None:
-		# Diretório base do projeto fastapi-app.
+		# Diretório base do projeto fastapi-language.
 		self.base_dir = Path(__file__).resolve().parents[2]
 		# Nome exibido no servico e no health check.
 		self.service_name = os.getenv("SERVICE_NAME", "ai-service")

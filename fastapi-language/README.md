@@ -32,7 +32,7 @@ Ele foi desenvolvido de forma isolada com FastAPI e tem foco em traducao de lege
 1. Entre na pasta do servico:
 
 ```powershell
-cd .\fastapi-app
+cd .\fastapi-language
 ```
 
 2. (Opcional) Crie e ative um ambiente virtual:
