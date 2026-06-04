@@ -2,8 +2,12 @@ package com.pedromartinsl.dslist.entities;
 
 import java.util.Objects;
 
+import com.pedromartinsl.dslist.entities.enums.Genre;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -19,7 +23,8 @@ public class Movie {
 	
 	@Column(name = "movie_year")
 	private Integer year;
-	private String genre;
+	@Enumerated(EnumType.STRING)
+	private Genre genre;
 	private String imgUrl;
 	private String videoUrl;
 	private String description;
@@ -27,7 +32,7 @@ public class Movie {
     public Movie() {
     }
     
-	public Movie(Long id, String title, Integer year, String genre, String imgUrl,
+	public Movie(Long id, String title, Integer year, Genre genre, String imgUrl,
 			String videoUrl, String description) {
 		this.id = id;
 		this.title = title;
@@ -55,10 +60,10 @@ public class Movie {
 	public void setYear(Integer year) {
 		this.year = year;
 	}
-	public String getGenre() {
+	public Genre getGenre() {
 		return genre;
 	}
-	public void setGenre(String genre) {
+	public void setGenre(Genre genre) {
 		this.genre = genre;
 	}
 	public String getImgUrl() {

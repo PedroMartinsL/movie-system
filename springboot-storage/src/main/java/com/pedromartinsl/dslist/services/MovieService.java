@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.pedromartinsl.dslist.dto.MovieDTO;
 import com.pedromartinsl.dslist.dto.MovieMinDTO;
 import com.pedromartinsl.dslist.entities.Movie;
+import com.pedromartinsl.dslist.entities.enums.Genre;
 import com.pedromartinsl.dslist.infrastructure.services.StorageService;
 import com.pedromartinsl.dslist.repositories.MovieRepository;
 
@@ -40,7 +41,7 @@ public class MovieService {
     public MovieDTO createMovie(
         String title,
         Integer year,
-        String genre,
+        Genre genre,
         String description,
         MultipartFile video,
         MultipartFile thumbnail

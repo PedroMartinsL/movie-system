@@ -15,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.pedromartinsl.dslist.dto.MovieDTO;
 import com.pedromartinsl.dslist.dto.MovieMinDTO;
+import com.pedromartinsl.dslist.entities.enums.Genre;
 import com.pedromartinsl.dslist.services.MovieService;
 
 @RestController
@@ -38,7 +39,7 @@ public class MovieController {
     public MovieDTO createMovie(
             @RequestParam String title,
             @RequestParam Integer year,
-            @RequestParam String genre,
+            @RequestParam Genre genre,
             @RequestParam String description,
             @RequestParam MultipartFile video,
             @RequestParam MultipartFile thumbnail

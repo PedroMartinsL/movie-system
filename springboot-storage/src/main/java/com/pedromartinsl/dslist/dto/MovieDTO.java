@@ -1,13 +1,14 @@
 package com.pedromartinsl.dslist.dto;
 
 import com.pedromartinsl.dslist.entities.Movie;
+import com.pedromartinsl.dslist.entities.enums.Genre;
 
 public class MovieDTO {
     
     private Long id;
 	private String title;
 	private Integer year;
-	private String genre;
+	private Genre genre;
 	private String imgUrl;
 	private String description;
 	private String videoUrl;
@@ -40,10 +41,10 @@ public class MovieDTO {
 	public void setYear(Integer year) {
 		this.year = year;
 	}
-	public String getGenre() {
+	public Genre getGenre() {
 		return genre;
 	}
-	public void setGenre(String genre) {
+	public void setGenre(Genre genre) {
 		this.genre = genre;
 	}
 	public String getImgUrl() {
