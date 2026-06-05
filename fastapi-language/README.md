@@ -146,3 +146,40 @@ Arquivo de testes:
 A traducao esta mockada por enquanto, pela funcao `mock_translate_text`.
 
 Ela existe para o MVP e foi deixada simples para facilitar futura troca por IA real (OpenAI, Gemini, Whisper ou outro modelo).
+
+## Endpoints adicionados para Player e Idiomas
+
+### POST /idioma/
+
+Cria um idioma disponivel para legendas.
+
+Payload:
+
+```json
+{
+  "name": "pt-BR"
+}
+```
+
+### GET /idiomas/
+
+Lista todos os idiomas cadastrados.
+
+### GET /player/{title_id}/manifest
+
+Retorna um manifesto HLS mockado com URL segura para o player iniciar a reproducao.
+
+### GET /player/{title_id}/subtitles?lang={language}
+
+Busca legenda por filme e idioma.
+
+- Se a legenda existir, retorna `status: "ready"` com o conteudo.
+- Se nao existir, mas existir SRT original em ingles, retorna `202` com `status: "processing"` e dispara a geracao em background.
+- Se nao houver SRT original, retorna `404`.
+
+### POST /ai/transcribe
+
+Mock do servico de IA.
+
+- Sem `subtitle_content`, simula transcricao de audio para SRT.
+- Com `subtitle_content` e `target_language`, traduz uma legenda SRT existente.

@@ -22,6 +22,7 @@ class Settings:
 		# Diretorio onde arquivos traduzidos sao salvos localmente.
 		configured_output_dir = os.getenv("OUTPUT_DIR", "storage/output")
 		self.output_dir = (self.base_dir / configured_output_dir).resolve()
+		self.storage_base_url = os.getenv("STORAGE_BASE_URL", "http://storage-spring:8080")
 
 
 # Instancia global de configuracao usada nos demais modulos.
