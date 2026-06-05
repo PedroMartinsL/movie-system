@@ -1,34 +1,31 @@
 # =========================
 # BUILD STAGE
 # =========================
-FROM maven:3.9.6-eclipse-temurin-21 AS build
+FROM maven:3.9.16-eclipse-temurin-25 AS builder
 
 WORKDIR /app
 
-# copia apenas pom primeiro (melhor cache)
+# copia pom primeiro (cache de dependências)
 COPY pom.xml .
 
 # baixa dependências
-RUN mvn dependency:go-offline
+RUN mvn dependency:go-offline -B
 
-# copia código fonte
+# copia código
 COPY src ./src
 
 # build da aplicação
-RUN mvn clean package -DskipTests
+RUN mvn clean package -DskipTests -B
 
 # =========================
 # RUNTIME STAGE
 # =========================
-FROM eclipse-temurin:21-jdk
+FROM eclipse-temurin:25-jdk
 
 WORKDIR /app
 
-# copia o jar gerado
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=builder /app/target/*.jar app.jar
 
-# expõe porta do Spring Boot
 EXPOSE 8080
 
-# comando de execução
 ENTRYPOINT ["java", "-jar", "app.jar"]

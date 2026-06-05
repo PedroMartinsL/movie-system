@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
 
   postgres-storage:
@@ -80,13 +78,13 @@ services:
       - backend
 
   catalog-spring:
-    build: ./catalog-service
+    build: ./spring-catalog
     container_name: catalog-spring-service
     ports:
       - "8081:8081"
     depends_on:
       - storage-spring
-      - subtitle-spring
+      # - subtitle-spring
     environment:
       SERVICES_STORAGE_URL: ${STORAGE_URL}
       SERVICES_SUBTITLE_URL: ${SUBTITLE_URL}

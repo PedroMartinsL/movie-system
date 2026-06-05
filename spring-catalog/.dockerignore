@@ -1,27 +1,9 @@
-# Maven
 target/
-*.jar
-*.war
 
-# IDEs
-.idea/
-.vscode/
-*.iml
-
-# Git
 .git/
 .gitignore
 
-# Logs
-logs/
+.idea/
+.vscode/
+
 *.log
-
-# System
-.DS_Store
-
-# Node (caso tenha algo misto)
-node_modules/
-
-# Docker
-Dockerfile
-docker-compose.yml
