@@ -8,9 +8,9 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: ${DB_NAME}       
-      POSTGRES_USER: ${POSTGRES_USER}       
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} 
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -18,6 +18,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - backend
 
   minio:
     image: minio/minio
@@ -36,6 +38,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - backend
 
   gateway:
     build: ./fastapi-gateway
@@ -47,11 +51,13 @@ services:
     environment:
       JWT_SECRET: ${JWT_SECRET}
       STORAGE_URL: ${STORAGE_URL}
-      
+    networks:
+      - backend
+
   storage-spring:
     build:
-      context: ./springboot-storage             
-      dockerfile: Dockerfile     
+      context: ./springboot-storage
+      dockerfile: Dockerfile
     container_name: storage-spring-boot
     ports:
       - "8080:8080"
@@ -70,3 +76,31 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+    networks:
+      - backend
+
+  catalog-spring:
+    build: ./catalog-service
+    container_name: catalog-spring-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - storage-spring
+      - subtitle-spring
+    environment:
+      SERVICES_STORAGE_URL: ${STORAGE_URL}
+      SERVICES_SUBTITLE_URL: ${SUBTITLE_URL}
+    networks:
+      - backend
+
+  # language-fastapi:
+  #   build: ./fastpi-language
+  #   container_name: subtitle-spring-service
+  #   ports:
+  #     - "8002:8002"
+  #   networks:
+  #     - backend
+
+networks:
+  backend:
+    driver: bridge
