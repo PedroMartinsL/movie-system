@@ -26,11 +26,11 @@ export function PublishForm({ onPublish, onCancel }: PublishFormProps) {
 
   function validate() {
     const e: Record<string, string> = {};
-    if (!title.trim()) e.title = "Titulo obrigatorio";
-    if (!genre) e.genre = "Selecione um genero";
-    if (!description.trim()) e.description = "Descricao obrigatoria";
+    if (!title.trim()) e.title = "Título obrigatório";
+    if (!genre) e.genre = "Selecione um gênero";
+    if (!description.trim()) e.description = "Descrição obrigatória";
     if (!idioma) e.idioma = "Selecione um idioma";
-    if (!posterFile) e.posterFile = "Selecione a imagem do poster";
+    if (!posterFile) e.posterFile = "Selecione a imagem do pôster";
     if (!videoFile) e.videoFile = "Selecione o arquivo do filme";
     return e;
   }
@@ -84,7 +84,7 @@ export function PublishForm({ onPublish, onCancel }: PublishFormProps) {
         <h2 style={{ fontFamily: "'Playfair Display', serif" }} className="text-foreground">
           Filme Publicado!
         </h2>
-        <p className="text-muted-foreground text-sm">Redirecionando para o catalogo...</p>
+        <p className="text-muted-foreground text-sm">Redirecionando para o catálogo...</p>
       </div>
     );
   }
@@ -96,7 +96,7 @@ export function PublishForm({ onPublish, onCancel }: PublishFormProps) {
         className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8 text-sm"
       >
         <ArrowLeft size={16} />
-        Voltar para o catalogo
+        Voltar para o catálogo
       </button>
 
       <div className="mb-8">
@@ -104,12 +104,12 @@ export function PublishForm({ onPublish, onCancel }: PublishFormProps) {
           Publicar Filme
         </h1>
         <p className="text-muted-foreground text-sm">
-          Preencha os dados do filme para adiciona-lo ao catalogo.
+          Preencha os dados do filme para adicioná-lo ao catálogo.
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        <Field label="Titulo *" error={errors.title}>
+        <Field label="Título *" error={errors.title}>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -118,7 +118,7 @@ export function PublishForm({ onPublish, onCancel }: PublishFormProps) {
           />
         </Field>
 
-        <Field label="Ano de Lancamento">
+        <Field label="Ano de Lançamento">
           <input
             type="number"
             value={year}
@@ -129,13 +129,13 @@ export function PublishForm({ onPublish, onCancel }: PublishFormProps) {
           />
         </Field>
 
-        <Field label="Genero *" error={errors.genre}>
+        <Field label="Gênero *" error={errors.genre}>
           <select
             value={genre}
             onChange={(e) => setGenre(e.target.value as Genre)}
             className={inputCls(!!errors.genre)}
           >
-            <option value="" disabled>Selecione o genero</option>
+            <option value="" disabled>Selecione o gênero</option>
             {GENRE_ENTRIES.map(([key, label]) => (
               <option key={key} value={key}>{label}</option>
             ))}
@@ -159,22 +159,22 @@ export function PublishForm({ onPublish, onCancel }: PublishFormProps) {
           <input
             value={legenda}
             onChange={(e) => setLegenda(e.target.value)}
-            placeholder="Ex: Portugues, Ingles, Sem legenda"
+            placeholder="Ex: Português, Inglês, Sem legenda"
             className={inputCls(false)}
           />
         </Field>
 
-        <Field label="Descricao *" error={errors.description}>
+        <Field label="Descrição *" error={errors.description}>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Descreva a historia do filme..."
+            placeholder="Descreva a história do filme..."
             rows={4}
             className={`${inputCls(!!errors.description)} resize-none`}
           />
         </Field>
 
-        <Field label="Imagem do Poster *" error={errors.posterFile}>
+        <Field label="Imagem do Pôster *" error={errors.posterFile}>
           <input
             type="file"
             accept="image/*"
@@ -216,7 +216,7 @@ export function PublishForm({ onPublish, onCancel }: PublishFormProps) {
             style={{ fontWeight: 500 }}
           >
             <Upload size={16} />
-            Publicar no Catalogo
+            Publicar no Catálogo
           </button>
         </div>
       </form>
