@@ -14,8 +14,10 @@ export function PublishForm({ onPublish, onCancel }: PublishFormProps) {
   const [title, setTitle] = useState("");
   const [year, setYear] = useState(new Date().getFullYear().toString());
   const [genre, setGenre] = useState<Genre | "">("");
-  const [imgUrl, setImgUrl] = useState("");
-  const [videoUrl, setVideoUrl] = useState("");
+  const [posterFile, setPosterFile] = useState<File | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [posterPreview, setPosterPreview] = useState("");
+  const [videoPreview, setVideoPreview] = useState("");
   const [description, setDescription] = useState("");
   const [idioma, setIdioma] = useState<Idioma | "">("");
   const [legenda, setLegenda] = useState("");
@@ -24,25 +26,46 @@ export function PublishForm({ onPublish, onCancel }: PublishFormProps) {
 
   function validate() {
     const e: Record<string, string> = {};
-    if (!title.trim()) e.title = "Título obrigatório";
-    if (!genre) e.genre = "Selecione um gênero";
-    if (!description.trim()) e.description = "Descrição obrigatória";
+    if (!title.trim()) e.title = "Titulo obrigatorio";
+    if (!genre) e.genre = "Selecione um genero";
+    if (!description.trim()) e.description = "Descricao obrigatoria";
     if (!idioma) e.idioma = "Selecione um idioma";
+    if (!posterFile) e.posterFile = "Selecione a imagem do poster";
+    if (!videoFile) e.videoFile = "Selecione o arquivo do filme";
     return e;
+  }
+
+  function handlePosterChange(file: File | null) {
+    setPosterFile(file);
+    setPosterPreview(file ? URL.createObjectURL(file) : "");
+  }
+
+  function handleVideoChange(file: File | null) {
+    setVideoFile(file);
+    setVideoPreview(file ? URL.createObjectURL(file) : "");
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
+    if (!posterFile || !videoFile) return;
+
+    const formData = new FormData();
+    formData.append("title", title.trim());
+    formData.append("year", year);
+    formData.append("genre", genre);
+    formData.append("description", description.trim());
+    formData.append("video", videoFile);
+    formData.append("thumbnail", posterFile);
 
     const movie: Movie = {
       id: Date.now().toString(),
       title: title.trim(),
       year: parseInt(year),
       genre: genre as Genre,
-      imgUrl: imgUrl.trim() || "https://images.unsplash.com/photo-1765510296004-614b6cc204da?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&w=400&h=600&auto=format",
-      videoUrl: videoUrl.trim() || "",
+      imgUrl: posterPreview,
+      videoUrl: videoPreview,
       description: description.trim(),
       idioma: idioma as Idioma,
       legenda: legenda.trim() || "Sem legenda",
@@ -61,7 +84,7 @@ export function PublishForm({ onPublish, onCancel }: PublishFormProps) {
         <h2 style={{ fontFamily: "'Playfair Display', serif" }} className="text-foreground">
           Filme Publicado!
         </h2>
-        <p className="text-muted-foreground text-sm">Redirecionando para o catálogo...</p>
+        <p className="text-muted-foreground text-sm">Redirecionando para o catalogo...</p>
       </div>
     );
   }
@@ -73,7 +96,7 @@ export function PublishForm({ onPublish, onCancel }: PublishFormProps) {
         className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8 text-sm"
       >
         <ArrowLeft size={16} />
-        Voltar para o catálogo
+        Voltar para o catalogo
       </button>
 
       <div className="mb-8">
@@ -81,14 +104,12 @@ export function PublishForm({ onPublish, onCancel }: PublishFormProps) {
           Publicar Filme
         </h1>
         <p className="text-muted-foreground text-sm">
-          Preencha os dados do filme para adicioná-lo ao catálogo.
+          Preencha os dados do filme para adiciona-lo ao catalogo.
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-
-        {/* Título */}
-        <Field label="Título *" error={errors.title}>
+        <Field label="Titulo *" error={errors.title}>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -97,8 +118,7 @@ export function PublishForm({ onPublish, onCancel }: PublishFormProps) {
           />
         </Field>
 
-        {/* Ano */}
-        <Field label="Ano de Lançamento">
+        <Field label="Ano de Lancamento">
           <input
             type="number"
             value={year}
@@ -109,21 +129,19 @@ export function PublishForm({ onPublish, onCancel }: PublishFormProps) {
           />
         </Field>
 
-        {/* Gênero — enum select */}
-        <Field label="Gênero *" error={errors.genre}>
+        <Field label="Genero *" error={errors.genre}>
           <select
             value={genre}
             onChange={(e) => setGenre(e.target.value as Genre)}
             className={inputCls(!!errors.genre)}
           >
-            <option value="" disabled>Selecione o gênero</option>
+            <option value="" disabled>Selecione o genero</option>
             {GENRE_ENTRIES.map(([key, label]) => (
               <option key={key} value={key}>{label}</option>
             ))}
           </select>
         </Field>
 
-        {/* Idioma — select */}
         <Field label="Idioma *" error={errors.idioma}>
           <select
             value={idioma}
@@ -137,54 +155,51 @@ export function PublishForm({ onPublish, onCancel }: PublishFormProps) {
           </select>
         </Field>
 
-        {/* Legenda */}
         <Field label="Legenda">
           <input
             value={legenda}
             onChange={(e) => setLegenda(e.target.value)}
-            placeholder="Ex: Português, Inglês, Sem legenda"
+            placeholder="Ex: Portugues, Ingles, Sem legenda"
             className={inputCls(false)}
           />
         </Field>
 
-        {/* Descrição */}
-        <Field label="Descrição *" error={errors.description}>
+        <Field label="Descricao *" error={errors.description}>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Descreva a história do filme..."
+            placeholder="Descreva a historia do filme..."
             rows={4}
             className={`${inputCls(!!errors.description)} resize-none`}
           />
         </Field>
 
-        {/* imgUrl */}
-        <Field label="URL da Imagem (Pôster)">
+        <Field label="Imagem do Poster *" error={errors.posterFile}>
           <input
-            type="url"
-            value={imgUrl}
-            onChange={(e) => setImgUrl(e.target.value)}
-            placeholder="https://... (opcional)"
-            className={inputCls(false)}
+            type="file"
+            accept="image/*"
+            onChange={(e) => handlePosterChange(e.target.files?.[0] ?? null)}
+            className={inputCls(!!errors.posterFile)}
           />
-          {imgUrl && (
+          {posterPreview && (
             <img
-              src={imgUrl}
+              src={posterPreview}
               alt="preview"
               className="mt-2 w-20 h-28 object-cover rounded-lg border border-border"
             />
           )}
         </Field>
 
-        {/* videoUrl */}
-        <Field label="URL do Vídeo">
+        <Field label="Arquivo do Filme *" error={errors.videoFile}>
           <input
-            type="url"
-            value={videoUrl}
-            onChange={(e) => setVideoUrl(e.target.value)}
-            placeholder="https://... (opcional)"
-            className={inputCls(false)}
+            type="file"
+            accept="video/*"
+            onChange={(e) => handleVideoChange(e.target.files?.[0] ?? null)}
+            className={inputCls(!!errors.videoFile)}
           />
+          {videoFile && (
+            <p className="text-muted-foreground text-xs">{videoFile.name}</p>
+          )}
         </Field>
 
         <div className="flex gap-3 pt-2">
@@ -201,7 +216,7 @@ export function PublishForm({ onPublish, onCancel }: PublishFormProps) {
             style={{ fontWeight: 500 }}
           >
             <Upload size={16} />
-            Publicar no Catálogo
+            Publicar no Catalogo
           </button>
         </div>
       </form>
