@@ -143,9 +143,31 @@ Arquivo de testes:
 
 ## Sobre a traducao de IA
 
-A traducao esta mockada por enquanto, pela funcao `mock_translate_text`.
+A traducao pode rodar de duas formas:
 
-Ela existe para o MVP e foi deixada simples para facilitar futura troca por IA real (OpenAI, Gemini, Whisper ou outro modelo).
+- `AI_PROVIDER=mock`: usa traducao mockada, boa para testes automatizados e demo sem dependencias.
+- `AI_PROVIDER=ollama`: chama um modelo local pelo Ollama em `/api/generate`.
+
+Exemplo usando Ollama local:
+
+```powershell
+ollama pull llama3.2
+$env:AI_PROVIDER="ollama"
+$env:OLLAMA_BASE_URL="http://localhost:11434"
+$env:OLLAMA_MODEL="llama3.2"
+uvicorn app.main:app --reload --port 8002
+```
+
+No Docker Compose, use:
+
+```powershell
+$env:AI_PROVIDER="ollama"
+$env:OLLAMA_BASE_URL="http://host.docker.internal:11434"
+$env:OLLAMA_MODEL="llama3.2"
+docker compose up --build language-fastapi
+```
+
+Observacao: o Ollama e usado aqui para traducao de legendas SRT. Para transcrever audio MP3 real, o caminho mais indicado e integrar um modelo de transcricao como Whisper; o endpoint `/ai/transcribe` ainda simula transcricao quando nao recebe `subtitle_content`.
 
 ## Endpoints adicionados para Player e Idiomas
 

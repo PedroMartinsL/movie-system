@@ -15,7 +15,7 @@ from app.schemas.subtitle_schema import (
 )
 from app.services.subtitle_file_service import save_translated_subtitle
 from app.services.subtitle_repository import Subtitle, subtitle_repository
-from app.services.translation_service import translate_srt_subtitle
+from app.services.translation_service import TranslationServiceError, translate_srt_subtitle
 
 router = APIRouter()
 
@@ -127,6 +127,11 @@ def translate_subtitle(
 			status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
 			detail=str(exc),
 		) from exc
+	except TranslationServiceError as exc:
+		raise HTTPException(
+			status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+			detail=str(exc),
+		) from exc
 	except Exception as exc:
 		# Fallback para qualquer erro nao mapeado explicitamente.
 		raise HTTPException(
@@ -149,11 +154,22 @@ def transcribe_or_translate(payload: TranscribeRequest) -> TranscribeResponse:
 		)
 
 	if payload.subtitle_content and payload.target_language:
-		subtitle_content = translate_srt_subtitle(
-			subtitle_content=payload.subtitle_content,
-			source_language=payload.source_language,
-			target_language=payload.target_language,
-		)
+		try:
+			subtitle_content = translate_srt_subtitle(
+				subtitle_content=payload.subtitle_content,
+				source_language=payload.source_language,
+				target_language=payload.target_language,
+			)
+		except ValueError as exc:
+			raise HTTPException(
+				status_code=status.HTTP_400_BAD_REQUEST,
+				detail=str(exc),
+			) from exc
+		except TranslationServiceError as exc:
+			raise HTTPException(
+				status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+				detail=str(exc),
+			) from exc
 		file_path = save_translated_subtitle(
 			movie_id=payload.movie_id,
 			target_language=payload.target_language,

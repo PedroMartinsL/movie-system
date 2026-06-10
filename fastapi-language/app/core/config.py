@@ -23,6 +23,10 @@ class Settings:
 		configured_output_dir = os.getenv("OUTPUT_DIR", "storage/output")
 		self.output_dir = (self.base_dir / configured_output_dir).resolve()
 		self.storage_base_url = os.getenv("STORAGE_BASE_URL", "http://storage-spring:8080")
+		self.ai_provider = os.getenv("AI_PROVIDER", "mock").strip().lower()
+		self.ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
+		self.ollama_model = os.getenv("OLLAMA_MODEL", "llama3.2")
+		self.ollama_timeout_seconds = float(os.getenv("OLLAMA_TIMEOUT_SECONDS", "60"))
 
 
 # Instancia global de configuracao usada nos demais modulos.

@@ -101,6 +101,9 @@ services:
     environment:
       SERVICE_NAME: ai-language-player-service
       STORAGE_BASE_URL: http://storage-spring:8080
+      AI_PROVIDER: ${AI_PROVIDER:-mock}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
     networks:
       - backend
 
