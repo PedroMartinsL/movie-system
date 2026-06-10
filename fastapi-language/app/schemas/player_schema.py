@@ -20,6 +20,35 @@ class SubtitleStatusResponse(BaseModel):
     message: str | None = None
 
 
+class AvailableSubtitleResponse(BaseModel):
+    id: int
+    movie_id: str
+    locale: str
+    format: str
+    file_path: str | None
+    status: str
+
+
+class MovieSubtitlesAdminResponse(BaseModel):
+    movie_id: str
+    original_language: str | None
+    available_subtitles: list[AvailableSubtitleResponse]
+    missing_languages: list[str]
+
+
+class GenerateSubtitleRequest(BaseModel):
+    target_language: str
+    source_language: str | None = None
+
+
+class GenerateSubtitleResponse(BaseModel):
+    movie_id: str
+    source_language: str
+    target_language: str
+    status: str
+    message: str
+
+
 class TranscribeRequest(BaseModel):
     movie_id: str
     source_language: str = "en"

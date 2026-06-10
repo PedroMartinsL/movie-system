@@ -1,9 +1,20 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Response, status
 
 from app.core.config import settings
-from app.schemas.language_schema import LanguageCreateRequest, LanguageResponse
+from app.schemas.language_schema import (
+	LanguageCreateRequest,
+	LanguageResponse,
+	MovieLanguageRequest,
+	MovieLanguageResponse,
+	UserLanguagesRequest,
+	UserLanguagesResponse,
+)
 from app.schemas.player_schema import (
+	AvailableSubtitleResponse,
+	GenerateSubtitleRequest,
+	GenerateSubtitleResponse,
 	ManifestResponse,
+	MovieSubtitlesAdminResponse,
 	SubtitleStatusResponse,
 	TranscribeRequest,
 	TranscribeResponse,
@@ -41,8 +52,16 @@ def build_subtitle_response(
 	)
 
 
-def generate_translated_subtitle(movie_id: str, target_language: str) -> None:
-	original = subtitle_repository.get_original_subtitle(movie_id)
+def generate_translated_subtitle(
+	movie_id: str,
+	target_language: str,
+	source_language: str | None = None,
+) -> None:
+	original = (
+		subtitle_repository.get_subtitle(movie_id, source_language)
+		if source_language
+		else subtitle_repository.get_original_subtitle(movie_id)
+	)
 	if not original:
 		return
 
@@ -67,6 +86,17 @@ def generate_translated_subtitle(movie_id: str, target_language: str) -> None:
 		status="ready",
 		subtitle_content=translated_subtitle,
 		file_path=file_path,
+	)
+
+
+def build_available_subtitle_response(subtitle: Subtitle) -> AvailableSubtitleResponse:
+	return AvailableSubtitleResponse(
+		id=subtitle.id,
+		movie_id=subtitle.movie_id,
+		locale=subtitle.locale,
+		format=subtitle.format,
+		file_path=subtitle.file_path,
+		status=subtitle.status,
 	)
 
 
@@ -229,6 +259,109 @@ def list_languages() -> list[LanguageResponse]:
 		LanguageResponse(id=language.id, name=language.name)
 		for language in subtitle_repository.list_languages()
 	]
+
+
+@router.post("/movies/{movie_id}/language", response_model=MovieLanguageResponse, tags=["idiomas"])
+def set_movie_language(
+	movie_id: str,
+	payload: MovieLanguageRequest,
+) -> MovieLanguageResponse:
+	language = subtitle_repository.set_movie_original_language(movie_id, payload.language)
+	return MovieLanguageResponse(movie_id=movie_id, language=language)
+
+
+@router.post("/user/languages", response_model=UserLanguagesResponse, tags=["idiomas"])
+def set_user_languages(payload: UserLanguagesRequest) -> UserLanguagesResponse:
+	languages = subtitle_repository.set_user_languages(payload.user_id, payload.languages)
+	return UserLanguagesResponse(user_id=payload.user_id, languages=languages)
+
+
+@router.get("/user/{user_id}/languages", response_model=UserLanguagesResponse, tags=["idiomas"])
+def list_user_languages(user_id: str) -> UserLanguagesResponse:
+	return UserLanguagesResponse(
+		user_id=user_id,
+		languages=subtitle_repository.list_user_languages(user_id),
+	)
+
+
+@router.delete("/user/{user_id}/languages/{language}", status_code=status.HTTP_204_NO_CONTENT, tags=["idiomas"])
+def delete_user_language(user_id: str, language: str) -> Response:
+	deleted = subtitle_repository.delete_user_language(user_id, language)
+	if not deleted:
+		raise HTTPException(
+			status_code=status.HTTP_404_NOT_FOUND,
+			detail="User language was not found.",
+		)
+
+	return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get(
+	"/admin/movies/{movie_id}/subtitles",
+	response_model=MovieSubtitlesAdminResponse,
+	tags=["admin-subtitles"],
+)
+def list_movie_subtitles_for_admin(movie_id: str) -> MovieSubtitlesAdminResponse:
+	return MovieSubtitlesAdminResponse(
+		movie_id=movie_id,
+		original_language=subtitle_repository.get_movie_original_language(movie_id),
+		available_subtitles=[
+			build_available_subtitle_response(subtitle)
+			for subtitle in subtitle_repository.list_movie_subtitles(movie_id)
+		],
+		missing_languages=subtitle_repository.list_missing_subtitle_languages(movie_id),
+	)
+
+
+@router.post(
+	"/admin/movies/{movie_id}/subtitles/generate",
+	response_model=GenerateSubtitleResponse,
+	status_code=status.HTTP_202_ACCEPTED,
+	tags=["admin-subtitles"],
+)
+def generate_movie_subtitle_for_admin(
+	movie_id: str,
+	payload: GenerateSubtitleRequest,
+	background_tasks: BackgroundTasks,
+) -> GenerateSubtitleResponse:
+	target_language = payload.target_language.strip()
+	source_language = (
+		payload.source_language.strip()
+		if payload.source_language
+		else subtitle_repository.get_movie_original_language(movie_id)
+	)
+	if not source_language:
+		raise HTTPException(
+			status_code=status.HTTP_404_NOT_FOUND,
+			detail="Movie original language was not found.",
+		)
+
+	original_subtitle = subtitle_repository.get_subtitle(movie_id, source_language)
+	if not original_subtitle or original_subtitle.status != "ready":
+		raise HTTPException(
+			status_code=status.HTTP_404_NOT_FOUND,
+			detail="Original subtitle was not found for this movie and language.",
+		)
+
+	existing_subtitle = subtitle_repository.get_subtitle(movie_id, target_language)
+	if existing_subtitle and existing_subtitle.status == "ready":
+		return GenerateSubtitleResponse(
+			movie_id=movie_id,
+			source_language=source_language,
+			target_language=target_language,
+			status="ready",
+			message="Subtitle already exists.",
+		)
+
+	subtitle_repository.mark_processing(movie_id, target_language)
+	background_tasks.add_task(generate_translated_subtitle, movie_id, target_language, source_language)
+	return GenerateSubtitleResponse(
+		movie_id=movie_id,
+		source_language=source_language,
+		target_language=target_language,
+		status="processing",
+		message="Subtitle generation was started in background.",
+	)
 
 
 @router.get("/player/{title_id}/manifest", response_model=ManifestResponse, tags=["player"])
