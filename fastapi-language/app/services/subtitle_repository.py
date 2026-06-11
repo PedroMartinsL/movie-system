@@ -133,6 +133,17 @@ class InMemorySubtitleRepository:
             if language.name.lower() not in available_locales
         ]
 
+    def remove_movie_subtitles(self, movie_id: str) -> None:
+        subtitle_keys = [
+            key
+            for key in self._subtitles
+            if key[0] == movie_id
+        ]
+        for key in subtitle_keys:
+            self._subtitles.pop(key, None)
+
+        self._movie_original_languages.pop(movie_id, None)
+
     def get_subtitle(self, movie_id: str, locale: str) -> Subtitle | None:
         return self._subtitles.get((movie_id, locale))
 
