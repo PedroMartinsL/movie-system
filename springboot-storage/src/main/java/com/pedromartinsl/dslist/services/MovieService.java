@@ -43,6 +43,7 @@ public class MovieService {
         Integer year,
         Genre genre,
         String description,
+        String languageCode,
         MultipartFile video,
         MultipartFile thumbnail
     ) throws IOException {
@@ -62,6 +63,7 @@ public class MovieService {
         Movie movie = new Movie();
 
         movie.setTitle(title);
+        movie.setLanguageCode(languageCode);
         movie.setYear(year);
         movie.setGenre(genre);
         movie.setDescription(description);

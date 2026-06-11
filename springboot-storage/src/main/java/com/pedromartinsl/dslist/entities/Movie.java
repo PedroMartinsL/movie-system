@@ -26,6 +26,7 @@ public class Movie {
 	@Enumerated(EnumType.STRING)
 	private Genre genre;
 	private String imgUrl;
+	private String languageCode;
 	private String videoUrl;
 	private String description;
 	
@@ -33,7 +34,7 @@ public class Movie {
     }
     
 	public Movie(Long id, String title, Integer year, Genre genre, String imgUrl,
-			String videoUrl, String description) {
+			String videoUrl, String description, String languageCode) {
 		this.id = id;
 		this.title = title;
 		this.year = year;
@@ -41,6 +42,7 @@ public class Movie {
 		this.imgUrl = imgUrl;
 		this.videoUrl = videoUrl;
 		this.description = description;		
+		this.languageCode = languageCode;		
 	}
 	public Long getId() {
 		return id;
@@ -104,4 +106,12 @@ public class Movie {
 	public void setDescription(String description) {
 		this.description = description;
 	}
+
+    public String getLanguageCode() {
+        return languageCode;
+    }
+
+    public void setLanguageCode(String languageCode) {
+        this.languageCode = languageCode;
+    }
 }

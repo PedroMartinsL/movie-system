@@ -12,6 +12,7 @@ public class MovieDTO {
 	private String imgUrl;
 	private String description;
 	private String videoUrl;
+	private String languageCode;
 	
 	public MovieDTO(Movie entity) {
 		this.id = entity.getId();
@@ -21,6 +22,7 @@ public class MovieDTO {
 		this.imgUrl = entity.getImgUrl();
 		this.description = entity.getDescription();
 		this.videoUrl = entity.getVideoUrl();
+		this.languageCode = entity.getLanguageCode();
 	}
 	
 	public Long getId() {
@@ -69,5 +71,12 @@ public class MovieDTO {
 	public void setVideoUrl(String videoUrl) {
 		this.videoUrl = videoUrl;
 	}
-	
+
+    public String getLanguageCode() {
+        return languageCode;
+    }
+
+    public void setLanguageCode(String languageCode) {
+        this.languageCode = languageCode;
+    }
 }

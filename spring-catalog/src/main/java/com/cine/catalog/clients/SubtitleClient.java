@@ -10,8 +10,10 @@ public interface SubtitleClient {
 
     List<String> getAvailableLanguages(@PathVariable String movieId);
 
-    String getSubtitle(
-            @PathVariable String movieId,
-            @PathVariable String language
+    List<String> getSubtitles(
+            @PathVariable String movieId
     );
+
+    void createBindSubtitle(String movieId);
+    void removeBindSubtitles(String movieId);
 }

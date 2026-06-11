@@ -1,39 +1,74 @@
 package com.pedromartinsl.dslist.dto;
 
 import com.pedromartinsl.dslist.entities.Movie;
+import com.pedromartinsl.dslist.entities.enums.Genre;
 
 public class MovieMinDTO {
+
     private Long id;
-	private String title;
-	private Integer year;
-	private String imgUrl;
-	private String description;
+    private String title;
+    private Integer year;
+    private Genre genre;
+    private String imgUrl;
+    private String languageCode;
 
     public MovieMinDTO() {
-
     }
 
     public MovieMinDTO(Movie entity) {
-		id = entity.getId();
-		title = entity.getTitle();
-		year = entity.getYear();
-		imgUrl = entity.getImgUrl();
-		description = entity.getDescription();
-	}
-	
-	public Long getId() {
-		return id;
-	}
-	public String getTitle() {
-		return title;
-	}
-	public Integer getYear() {
-		return year;
-	}
-	public String getImgUrl() {
-		return imgUrl;
-	}
-	public String getDescription() {
-		return description;
-	}
+        this.id = entity.getId();
+        this.title = entity.getTitle();
+        this.year = entity.getYear();
+        this.genre = entity.getGenre();
+        this.imgUrl = entity.getImgUrl();
+        this.languageCode = entity.getLanguageCode();
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public Integer getYear() {
+        return year;
+    }
+
+    public void setYear(Integer year) {
+        this.year = year;
+    }
+
+    public Genre getGenre() {
+        return genre;
+    }
+
+    public void setGenre(Genre genre) {
+        this.genre = genre;
+    }
+
+    public String getImgUrl() {
+        return imgUrl;
+    }
+
+    public void setImgUrl(String imgUrl) {
+        this.imgUrl = imgUrl;
+    }
+
+    public String getLanguageCode() {
+        return languageCode;
+    }
+
+    public void setLanguageCode(String languageCode) {
+        this.languageCode = languageCode;
+    }
 }

@@ -42,7 +42,8 @@ public class MovieController {
             @RequestParam Genre genre,
             @RequestParam String description,
             @RequestParam MultipartFile video,
-            @RequestParam MultipartFile thumbnail
+            @RequestParam MultipartFile thumbnail,
+            @RequestParam String languageCode
     ) throws IOException {
 
         try {
@@ -59,6 +60,7 @@ public class MovieController {
                     year,
                     genre,
                     description,
+                    languageCode,
                     video,
                     thumbnail
             );

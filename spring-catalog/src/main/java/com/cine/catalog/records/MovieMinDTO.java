@@ -1,12 +1,10 @@
 package com.cine.catalog.records;
 
-public record MovieDTO(
+public record MovieMinDTO(
         String id,
         String title,
-        Integer year,
         String genre,
+        Integer year,
         String imgUrl,
-        String description,
-        String videoUrl,
         String languageCode
 ) {}
