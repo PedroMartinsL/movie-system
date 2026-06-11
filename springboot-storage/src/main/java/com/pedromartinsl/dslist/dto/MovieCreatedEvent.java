@@ -1,7 +1,9 @@
 package com.pedromartinsl.dslist.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public record MovieCreatedEvent(
-    String movieId,
-    String title,
-    String languageCode
+    @JsonProperty("movieId") String movieId,
+    @JsonProperty("title") String title,
+    @JsonProperty("languageCode") String languageCode
 ) {}
