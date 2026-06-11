@@ -77,6 +77,18 @@ services:
     networks:
       - backend
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"   # bind Spring
+      - "15672:15672" # web panel
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    networks:
+      - backend
+
   catalog-spring:
     build: ./spring-catalog
     container_name: catalog-spring-service

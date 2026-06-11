@@ -7,7 +7,6 @@ public class MovieMinDTO {
 
     private Long id;
     private String title;
-    private Integer year;
     private Genre genre;
     private String imgUrl;
     private String languageCode;
@@ -18,7 +17,6 @@ public class MovieMinDTO {
     public MovieMinDTO(Movie entity) {
         this.id = entity.getId();
         this.title = entity.getTitle();
-        this.year = entity.getYear();
         this.genre = entity.getGenre();
         this.imgUrl = entity.getImgUrl();
         this.languageCode = entity.getLanguageCode();
@@ -38,14 +36,6 @@ public class MovieMinDTO {
 
     public void setTitle(String title) {
         this.title = title;
-    }
-
-    public Integer getYear() {
-        return year;
-    }
-
-    public void setYear(Integer year) {
-        this.year = year;
     }
 
     public Genre getGenre() {

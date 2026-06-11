@@ -9,10 +9,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.pedromartinsl.dslist.dto.MovieCreatedEvent;
 import com.pedromartinsl.dslist.dto.MovieDTO;
 import com.pedromartinsl.dslist.dto.MovieMinDTO;
 import com.pedromartinsl.dslist.entities.Movie;
 import com.pedromartinsl.dslist.entities.enums.Genre;
+import com.pedromartinsl.dslist.infrastructure.producers.MovieProducer;
 import com.pedromartinsl.dslist.infrastructure.services.StorageService;
 import com.pedromartinsl.dslist.repositories.MovieRepository;
 
@@ -25,6 +27,9 @@ public class MovieService {
 
     @Autowired
 	private StorageService storageService;
+
+    @Autowired
+    private MovieProducer movieProducer;
 
 	@Transactional(readOnly = true)
 	public MovieDTO findById(@PathVariable Long listId) {
@@ -72,6 +77,14 @@ public class MovieService {
         movie.setImgUrl(thumbnailUrl);
 
         Movie saved = movieRepository.save(movie);
+        
+        movieProducer.sendMovieCreated(
+            new MovieCreatedEvent(
+                saved.getId().toString(),
+                saved.getTitle(),
+                saved.getLanguageCode()
+            )
+        );
 
         return new MovieDTO(saved);
     }
