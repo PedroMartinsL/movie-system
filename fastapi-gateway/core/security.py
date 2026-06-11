@@ -1,6 +1,6 @@
 from jose import jwt, JWTError
 from fastapi import HTTPException
-from config import settings
+from core.config import settings
 
 def verify_jwt(token: str):
     try:
