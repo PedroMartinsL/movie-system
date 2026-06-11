@@ -27,6 +27,11 @@ class Settings:
 		self.ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
 		self.ollama_model = os.getenv("OLLAMA_MODEL", "llama3.2")
 		self.ollama_timeout_seconds = float(os.getenv("OLLAMA_TIMEOUT_SECONDS", "60"))
+		self.media_work_dir = (self.base_dir / os.getenv("MEDIA_WORK_DIR", "storage/work")).resolve()
+		self.ffmpeg_path = os.getenv("FFMPEG_PATH", "ffmpeg")
+		self.whisper_model = os.getenv("WHISPER_MODEL", "base")
+		self.whisper_device = os.getenv("WHISPER_DEVICE", "cpu")
+		self.whisper_compute_type = os.getenv("WHISPER_COMPUTE_TYPE", "int8")
 
 
 # Instancia global de configuracao usada nos demais modulos.

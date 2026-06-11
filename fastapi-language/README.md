@@ -26,6 +26,7 @@ Ele foi desenvolvido de forma isolada com FastAPI e tem foco em traducao de lege
 
 - Python 3.10+
 - pip
+- ffmpeg instalado para extrair audio de arquivos de video
 
 ## Como rodar o servico (passo a passo)
 
@@ -205,3 +206,53 @@ Mock do servico de IA.
 
 - Sem `subtitle_content`, simula transcricao de audio para SRT.
 - Com `subtitle_content` e `target_language`, traduz uma legenda SRT existente.
+
+### POST /ai/transcribe-file
+
+Recebe um arquivo real de audio ou video e gera uma legenda `.srt`.
+
+Formato: `multipart/form-data`
+
+Campos:
+
+```text
+movie_id         id do filme
+source_language  codigo do idioma original, ex: en, pt-BR, es
+file             arquivo .mp3, .wav, .mp4, .mkv, .mov, .webm
+```
+
+Fluxo:
+
+- Se o arquivo for video, o servico usa `ffmpeg` para extrair audio.
+- Depois usa `faster-whisper` para transcrever o audio.
+- A transcricao e convertida para SRT.
+- A legenda gerada e salva em `storage/output`.
+- O filme recebe uma legenda pronta no idioma `source_language`.
+
+Exemplo com `curl`:
+
+```powershell
+curl.exe -X POST http://localhost:8002/ai/transcribe-file `
+  -F "movie_id=1" `
+  -F "source_language=en" `
+  -F "file=@C:\Users\Elward\Downloads\MOVIES\audio.mp3"
+```
+
+## Idiomas padronizados
+
+O servico usa `languageCode` para integrar com catalogo, storage e front.
+
+```json
+[
+  { "name": "Português", "code": "pt-BR" },
+  { "name": "Inglês", "code": "en" },
+  { "name": "Espanhol", "code": "es" },
+  { "name": "Francês", "code": "fr" },
+  { "name": "Alemão", "code": "de" },
+  { "name": "Italiano", "code": "it" },
+  { "name": "Japonês", "code": "ja" },
+  { "name": "Coreano", "code": "ko" },
+  { "name": "Mandarim", "code": "zh" },
+  { "name": "Russo", "code": "ru" }
+]
+```

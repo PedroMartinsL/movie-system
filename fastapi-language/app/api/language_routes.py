@@ -15,14 +15,14 @@ router = APIRouter(tags=["idiomas"])
 
 @router.post("/idioma/", response_model=LanguageResponse, status_code=status.HTTP_201_CREATED)
 def create_language(payload: LanguageCreateRequest) -> LanguageResponse:
-    language = subtitle_repository.create_language(payload.name)
-    return LanguageResponse(id=language.id, name=language.name)
+    language = subtitle_repository.create_language(payload.name, payload.code)
+    return LanguageResponse(id=language.id, name=language.name, code=language.code)
 
 
 @router.get("/idiomas/", response_model=list[LanguageResponse])
 def list_languages() -> list[LanguageResponse]:
     return [
-        LanguageResponse(id=language.id, name=language.name)
+        LanguageResponse(id=language.id, name=language.name, code=language.code)
         for language in subtitle_repository.list_languages()
     ]
 

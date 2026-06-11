@@ -8,6 +8,7 @@ class LanguageCreateRequest(BaseModel):
     """
 
     name: str = Field(..., min_length=2)
+    code: str | None = Field(default=None, min_length=2)
 
     @field_validator("name")
     @classmethod
@@ -21,6 +22,7 @@ class LanguageCreateRequest(BaseModel):
 class LanguageResponse(BaseModel):
     id: int
     name: str
+    code: str
 
 
 class MovieLanguageRequest(BaseModel):

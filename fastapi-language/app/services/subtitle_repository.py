@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -8,6 +9,7 @@ from app.core.config import settings
 class Language:
     id: int
     name: str
+    code: str
 
 
 @dataclass
@@ -37,8 +39,10 @@ class InMemorySubtitleRepository:
         self._seed()
 
     def _seed(self) -> None:
-        for language in ("en", "pt-BR", "es"):
-            self.create_language(language)
+        languages_file = settings.base_dir / "app" / "data" / "languages.json"
+        languages = json.loads(languages_file.read_text(encoding="utf-8"))
+        for language in languages:
+            self.create_language(language["name"], language["code"])
         self.set_movie_original_language("movie-001", "en")
 
         self.upsert_subtitle(
@@ -54,26 +58,32 @@ class InMemorySubtitleRepository:
             file_path=None,
         )
 
-    def create_language(self, name: str) -> Language:
+    def create_language(self, name: str, code: str | None = None) -> Language:
         normalized = name.strip()
-        existing = self._languages.get(normalized.lower())
+        normalized_code = (code or normalized).strip()
+        existing = self._languages.get(normalized_code.lower())
         if existing:
             return existing
 
-        language = Language(id=self._next_language_id, name=normalized)
+        language = Language(
+            id=self._next_language_id,
+            name=normalized,
+            code=normalized_code,
+        )
         self._next_language_id += 1
-        self._languages[normalized.lower()] = language
+        self._languages[normalized_code.lower()] = language
         return language
 
     def list_languages(self) -> list[Language]:
         return sorted(self._languages.values(), key=lambda language: language.name.lower())
 
-    def language_exists(self, name: str) -> bool:
-        return name.strip().lower() in self._languages
+    def language_exists(self, code: str) -> bool:
+        return code.strip().lower() in self._languages
 
     def set_movie_original_language(self, movie_id: str, language: str) -> str:
         normalized_language = language.strip()
-        self.create_language(normalized_language)
+        if not self.language_exists(normalized_language):
+            self.create_language(normalized_language, normalized_language)
         self._movie_original_languages[movie_id] = normalized_language
         return normalized_language
 
@@ -84,7 +94,8 @@ class InMemorySubtitleRepository:
         normalized_languages = []
         for language in languages:
             normalized_language = language.strip()
-            self.create_language(normalized_language)
+            if not self.language_exists(normalized_language):
+                self.create_language(normalized_language, normalized_language)
             normalized_languages.append(normalized_language)
 
         self._user_languages[user_id] = set(normalized_languages)
@@ -128,9 +139,9 @@ class InMemorySubtitleRepository:
             if subtitle.status in {"ready", "processing"}
         }
         return [
-            language.name
+            language.code
             for language in self.list_languages()
-            if language.name.lower() not in available_locales
+            if language.code.lower() not in available_locales
         ]
 
     def remove_movie_subtitles(self, movie_id: str) -> None:

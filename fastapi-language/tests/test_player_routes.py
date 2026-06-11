@@ -9,15 +9,16 @@ client = TestClient(app)
 
 
 def test_create_and_list_languages() -> None:
-    create_response = client.post("/idioma/", json={"name": "en-JM"})
+    create_response = client.post("/idioma/", json={"name": "Inglês Jamaica", "code": "en-JM"})
 
     assert create_response.status_code == 201
-    assert create_response.json()["name"] == "en-JM"
+    assert create_response.json()["name"] == "Inglês Jamaica"
+    assert create_response.json()["code"] == "en-JM"
 
     list_response = client.get("/idiomas/")
 
     assert list_response.status_code == 200
-    languages = [language["name"] for language in list_response.json()]
+    languages = [language["code"] for language in list_response.json()]
     assert "en-JM" in languages
 
 

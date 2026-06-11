@@ -65,3 +65,4 @@ class TranscribeResponse(BaseModel):
     status: str
     subtitle_content: str
     file_path: str | None = None
+    source_media: str | None = None
