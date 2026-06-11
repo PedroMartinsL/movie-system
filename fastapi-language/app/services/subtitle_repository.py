@@ -32,11 +32,14 @@ class InMemorySubtitleRepository:
         self._next_subtitle_id = 1
         self._languages: dict[str, Language] = {}
         self._subtitles: dict[tuple[str, str], Subtitle] = {}
+        self._movie_original_languages: dict[str, str] = {}
+        self._user_languages: dict[str, set[str]] = {}
         self._seed()
 
     def _seed(self) -> None:
         for language in ("en", "pt-BR", "es"):
             self.create_language(language)
+        self.set_movie_original_language("movie-001", "en")
 
         self.upsert_subtitle(
             movie_id="movie-001",
@@ -65,11 +68,77 @@ class InMemorySubtitleRepository:
     def list_languages(self) -> list[Language]:
         return sorted(self._languages.values(), key=lambda language: language.name.lower())
 
+    def language_exists(self, name: str) -> bool:
+        return name.strip().lower() in self._languages
+
+    def set_movie_original_language(self, movie_id: str, language: str) -> str:
+        normalized_language = language.strip()
+        self.create_language(normalized_language)
+        self._movie_original_languages[movie_id] = normalized_language
+        return normalized_language
+
+    def get_movie_original_language(self, movie_id: str) -> str | None:
+        return self._movie_original_languages.get(movie_id)
+
+    def set_user_languages(self, user_id: str, languages: list[str]) -> list[str]:
+        normalized_languages = []
+        for language in languages:
+            normalized_language = language.strip()
+            self.create_language(normalized_language)
+            normalized_languages.append(normalized_language)
+
+        self._user_languages[user_id] = set(normalized_languages)
+        return self.list_user_languages(user_id)
+
+    def list_user_languages(self, user_id: str) -> list[str]:
+        return sorted(self._user_languages.get(user_id, set()), key=str.lower)
+
+    def delete_user_language(self, user_id: str, language: str) -> bool:
+        user_languages = self._user_languages.get(user_id)
+        if not user_languages:
+            return False
+
+        normalized_lookup = language.strip().lower()
+        matched_language = next(
+            (
+                known_language
+                for known_language in user_languages
+                if known_language.lower() == normalized_lookup
+            ),
+            None,
+        )
+        if not matched_language:
+            return False
+
+        user_languages.remove(matched_language)
+        return True
+
+    def list_movie_subtitles(self, movie_id: str) -> list[Subtitle]:
+        subtitles = [
+            subtitle
+            for (subtitle_movie_id, _), subtitle in self._subtitles.items()
+            if subtitle_movie_id == movie_id
+        ]
+        return sorted(subtitles, key=lambda subtitle: subtitle.locale.lower())
+
+    def list_missing_subtitle_languages(self, movie_id: str) -> list[str]:
+        available_locales = {
+            subtitle.locale.lower()
+            for subtitle in self.list_movie_subtitles(movie_id)
+            if subtitle.status in {"ready", "processing"}
+        }
+        return [
+            language.name
+            for language in self.list_languages()
+            if language.name.lower() not in available_locales
+        ]
+
     def get_subtitle(self, movie_id: str, locale: str) -> Subtitle | None:
         return self._subtitles.get((movie_id, locale))
 
     def get_original_subtitle(self, movie_id: str) -> Subtitle | None:
-        subtitle = self.get_subtitle(movie_id, "en")
+        original_language = self.get_movie_original_language(movie_id) or "en"
+        subtitle = self.get_subtitle(movie_id, original_language)
         if subtitle and subtitle.status == "ready":
             return subtitle
         return None
