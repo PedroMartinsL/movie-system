@@ -3,6 +3,7 @@ package com.cine.catalog.services;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.cine.catalog.clients.LanguageClient;
 import com.cine.catalog.clients.StorageClient;
@@ -10,6 +11,7 @@ import com.cine.catalog.clients.SubtitleClient;
 import com.cine.catalog.records.MovieDTO;
 import com.cine.catalog.records.MovieDetailsDTO;
 import com.cine.catalog.records.MovieMinDTO;
+import com.cine.catalog.services.requests.CreateMovieRequest;
 
 import lombok.RequiredArgsConstructor;
 
@@ -20,7 +22,6 @@ public class CatalogService {
     private final StorageClient storageClient;
     private final SubtitleClient subtitleClient;
     private final LanguageClient languageClient;
-    
 
     public List<MovieMinDTO> getMovies(
             String genre,
@@ -28,8 +29,8 @@ public class CatalogService {
     ) {
         // Deixar genero opcional
 
-        List<String> userLanguages =
-                languageClient.getUserLanguages(userId);
+        List<String> userLanguages
+                = languageClient.getUserLanguages(userId);
 
         return storageClient.getAll(genre)
                 .stream()
@@ -39,8 +40,8 @@ public class CatalogService {
                         return true;
                     }
 
-                    List<String> subtitles =
-                            subtitleClient.getAvailableLanguages(
+                    List<String> subtitles
+                            = subtitleClient.getAvailableLanguages(
                                     movie.id());
 
                     return subtitles.stream()
@@ -54,11 +55,11 @@ public class CatalogService {
             String userId
     ) {
 
-        MovieDTO movie =
-                storageClient.getById(movieId);
+        MovieDTO movie
+                = storageClient.getById(movieId);
 
-        List<String> subtitles =
-                subtitleClient.getSubtitles(movieId);
+        List<String> subtitles
+                = subtitleClient.getSubtitles(movieId);
 
         return new MovieDetailsDTO(
                 movie,
@@ -66,17 +67,33 @@ public class CatalogService {
         );
     }
 
-public void createMovie(String movieId) {
+    public void createMovie(
+            CreateMovieRequest request,
+            MultipartFile video,
+            MultipartFile thumbnail,
+            MultipartFile subtitle
+    ) {
 
-    MovieDTO movie = storageClient.create(movieId);
+        MovieDTO movie = storageClient.create(
+                request,
+                video,
+                thumbnail
+        );
 
-    subtitleClient.createBindSubtitle(movie.id());
-}
+        if (subtitle != null && !subtitle.isEmpty()) {
 
-public void removeMovie(String movieId) {
+            subtitleClient.createSubtitle(
+                    movie.id(),
+                    request.languageCode(),
+                    subtitle
+            );
+        }
+    }
 
-    subtitleClient.removeBindSubtitles(movieId);
+    public void removeMovie(String movieId) {
 
-    storageClient.remove(movieId);
-}
+        subtitleClient.removeBindSubtitles(movieId);
+
+        storageClient.remove(movieId);
+    }
 }
