@@ -12,16 +12,21 @@ export type Idioma =
   | "Mandarim"
   | "Outro";
 
+// Tipo unificado: compatível com o modelo do backend e com os componentes visuais
 export interface Movie {
   id: string;
   title: string;
   year: number;
-  genre: Genre;
-  imgUrl: string;
-  videoUrl: string;
+  genre: string;
+  imgUrl: string | null;
+  videoUrl: string | null;
   description: string;
-  idioma: Idioma;
+  idioma: string;
   legenda: string;
+  // campos opcionais vindos da API
+  status?: string;
+  featured?: boolean;
+  createdAt?: string;
 }
 
 export const GENRE_LABELS: Record<Genre, string> = {

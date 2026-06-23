@@ -1,6 +1,8 @@
-import { Play, Globe, Subtitles } from "lucide-react";
+import { Play, Globe, Subtitles, Sparkles } from "lucide-react";
+import { useState, useEffect } from "react";
 import type { Movie } from "../types";
 import { GENRE_LABELS } from "../types";
+import { mediaUrl } from "../../services/api";
 
 interface HeroProps {
   movie: Movie;
@@ -8,12 +10,36 @@ interface HeroProps {
 }
 
 export function Hero({ movie, onSelect }: HeroProps) {
+  const [aiMessage, setAiMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const genreMap: Record<string, string> = {
+      ACTION: "ação", DRAMA: "drama", COMEDY: "comédia",
+      HORROR: "terror", ROMANCE: "romance", SCIFI: "ficção científica",
+      DOCUMENTARY: "documentário", ANIMATION: "animação", THRILLER: "thriller",
+    };
+    const genrePt = genreMap[movie.genre?.toUpperCase()] || movie.genre?.toLowerCase() || "";
+    const contextParts = [
+      movie.year && `lançado em ${movie.year}`,
+      genrePt && `do gênero ${genrePt}`,
+      movie.idioma && `no idioma ${movie.idioma}`,
+    ].filter(Boolean);
+    const context = contextParts.length ? `É um título ${contextParts.join(", ")}.` : "";
+    const msg = [
+      `Olá! Vou te contar um pouco sobre "${movie.title}".`,
+      context,
+      movie.description || "",
+      "Espero que curta bastante. Boa sessão! 🍿",
+    ].filter(Boolean).join(" ");
+    setAiMessage(msg);
+  }, [movie.id]);
+
   return (
     <section className="relative w-full overflow-hidden" style={{ minHeight: "520px" }}>
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{
-          backgroundImage: `url(${movie.imgUrl})`,
+          backgroundImage: `url(${mediaUrl(movie.imgUrl)})`,
           filter: "blur(2px) brightness(0.3)",
           transform: "scale(1.05)",
         }}
@@ -74,6 +100,25 @@ export function Hero({ movie, onSelect }: HeroProps) {
               Ver Detalhes
             </button>
           </div>
+
+          {aiMessage && (
+            <div
+              className="mt-4 rounded-xl border border-border overflow-hidden"
+              style={{ background: "rgba(10,10,11,0.65)", backdropFilter: "blur(10px)", maxWidth: "460px" }}
+            >
+              <div className="flex items-center gap-2 px-4 py-2 border-b border-border">
+                <Sparkles size={13} style={{ color: "var(--primary)" }} />
+                <span style={{ fontSize: "0.73rem", color: "var(--primary)", fontWeight: 600, letterSpacing: "0.04em" }}>
+                  ASSISTENTE CINEVAULT
+                </span>
+              </div>
+              <div className="px-4 py-3">
+                <p className="text-muted-foreground leading-relaxed" style={{ fontSize: "0.82rem" }}>
+                  {aiMessage}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="hidden lg:block absolute right-16 top-1/2 -translate-y-1/2">
@@ -83,7 +128,7 @@ export function Hero({ movie, onSelect }: HeroProps) {
               style={{ background: "linear-gradient(135deg, var(--primary), transparent)" }}
             />
             <img
-              src={movie.imgUrl}
+              src={mediaUrl(movie.imgUrl)}
               alt={movie.title}
               className="relative rounded-xl object-cover shadow-2xl"
               style={{ width: "220px", height: "330px" }}

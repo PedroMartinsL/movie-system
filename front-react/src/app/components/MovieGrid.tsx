@@ -1,6 +1,7 @@
 import type { Movie } from "../types";
 import { GENRE_LABELS } from "../types";
 import { Globe } from "lucide-react";
+import { mediaUrl } from "../../services/api";
 
 interface MovieGridProps {
   movies: Movie[];
@@ -33,7 +34,7 @@ function MovieCard({ movie, onSelect }: { movie: Movie; onSelect: (m: Movie) => 
     >
       <div className="relative overflow-hidden" style={{ paddingBottom: "150%" }}>
         <img
-          src={movie.imgUrl}
+          src={mediaUrl(movie.imgUrl)}
           alt={movie.title}
           className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />

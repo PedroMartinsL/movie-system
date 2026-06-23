@@ -1,132 +1,445 @@
-services:
+version: "3.9"
 
-  postgres-storage:
-    image: postgres:15-alpine
-    container_name: postgres-storage
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - ./postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+networks:
+  internal:
+    driver: bridge
+  external:
+    driver: bridge
+
+volumes:
+  minio-data:
+  rabbitmq-data:
+  auth-db-data:
+  catalog-db-data:
+  storage-db-data:
+  subtitle-db-data:
+  ai-db-data:
+  subscription-db-data:
+  notification-db-data:
+
+x-postgres-common: &postgres-common
+  image: postgres:15-alpine
+  restart: unless-stopped
+  networks:
+    - internal
+
+x-node-common: &node-common
+  restart: unless-stopped
+  networks:
+    - internal
+  environment:
+    NODE_ENV: production
+
+services:
+  # ─── Infraestrutura Compartilhada ────────────────────────────────────────────
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    restart: unless-stopped
     networks:
-      - backend
+      - internal
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   minio:
     image: minio/minio
-    container_name: minio-movie-storage
+    container_name: minio-resource-storage
+    restart: unless-stopped
     ports:
       - "9000:9000"
       - "9001:9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
     command: server /data --console-address ":9001"
     volumes:
-      - ./minio-data:/data
+      - minio-data:/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 5s
       timeout: 5s
       retries: 5
     networks:
-      - backend
+      - internal
 
-  gateway:
-    build: ./fastapi-gateway
-    container_name: api-gateway
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./fastapi-gateway:/app
-    environment:
-      JWT_SECRET: ${JWT_SECRET}
-      STORAGE_URL: ${STORAGE_URL}
+  minio-init:
+    image: minio/mc:latest
     networks:
-      - backend
+      - internal
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+        mc alias set local http://minio:9000 minioadmin minioadmin123;
+        mc mb --ignore-existing local/movies-videos;
+        mc mb --ignore-existing local/movies-posters;
+        mc anonymous set download local/movies-posters;
+        echo 'MinIO buckets created';
+      "
 
-  storage-spring:
+  mailhog:
+    image: mailhog/mailhog:latest
+    restart: unless-stopped
+    networks:
+      - internal
+    ports:
+      - "8025:8025"
+
+  # ─── Bancos de Dados (Database per Service) ──────────────────────────────────
+
+  auth-db:
+    <<: *postgres-common
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: auth_user
+      POSTGRES_PASSWORD: auth_pass
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U auth_user -d auth_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  catalog-db:
+    <<: *postgres-common
+    environment:
+      POSTGRES_DB: catalog_db
+      POSTGRES_USER: catalog_user
+      POSTGRES_PASSWORD: catalog_pass
+    volumes:
+      - catalog-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U catalog_user -d catalog_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  storage-db:
+    <<: *postgres-common
+    environment:
+      POSTGRES_DB: storage_db
+      POSTGRES_USER: storage_user
+      POSTGRES_PASSWORD: storage_pass
+    volumes:
+      - storage-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U storage_user -d storage_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  subtitle-db:
+    <<: *postgres-common
+    environment:
+      POSTGRES_DB: subtitle_db
+      POSTGRES_USER: subtitle_user
+      POSTGRES_PASSWORD: subtitle_pass
+    volumes:
+      - subtitle-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U subtitle_user -d subtitle_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  ai-db:
+    <<: *postgres-common
+    environment:
+      POSTGRES_DB: ai_db
+      POSTGRES_USER: ai_user
+      POSTGRES_PASSWORD: ai_pass
+    volumes:
+      - ai-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ai_user -d ai_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  subscription-db:
+    <<: *postgres-common
+    environment:
+      POSTGRES_DB: subscription_db
+      POSTGRES_USER: subscription_user
+      POSTGRES_PASSWORD: subscription_pass
+    volumes:
+      - subscription-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U subscription_user -d subscription_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  notification-db:
+    <<: *postgres-common
+    environment:
+      POSTGRES_DB: notification_db
+      POSTGRES_USER: notification_user
+      POSTGRES_PASSWORD: notification_pass
+    volumes:
+      - notification-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U notification_user -d notification_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ─── Microsserviços ──────────────────────────────────────────────────────────
+
+  auth-service:
+    <<: *node-common
     build:
-      context: ./springboot-storage
+      context: ./services/auth-service
       dockerfile: Dockerfile
-    container_name: storage-spring-boot
+    environment:
+      DATABASE_URL: postgresql://auth_user:auth_pass@auth-db:5432/auth_db
+      JWT_SECRET: 4977423ddea942f5a40b95f50a7af5f7dddfc5efefcecf9ec0cd071a420b72f7
+      JWT_EXPIRES_IN: 15m
+      REFRESH_TOKEN_EXPIRES_IN: 7d
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_CALLBACK_URL: http://localhost:8080/auth/google/callback
+      FRONTEND_URL: http://localhost:3000
+      PORT: 8001
+    depends_on:
+      auth-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  catalog-service:
+    <<: *node-common
+    build:
+      context: ./services/catalog-service
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://catalog_user:catalog_pass@catalog-db:5432/catalog_db
+      PORT: 8002
+      STORAGE_SERVICE_URL: http://storage-service:8003
+    depends_on:
+      catalog-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  storage-service:
+    <<: *node-common
+    build:
+      context: ./services/storage-service
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://storage_user:storage_pass@storage-db:5432/storage_db
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: "9000"
+      MINIO_USE_SSL: "false"
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+      MINIO_BUCKET_VIDEOS: movies-videos
+      MINIO_BUCKET_POSTERS: movies-posters
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      PORT: 8003
+    depends_on:
+      storage-db:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  subtitle-service:
+    <<: *node-common
+    build:
+      context: ./services/subtitle-service
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://subtitle_user:subtitle_pass@subtitle-db:5432/subtitle_db
+      PORT: 8004
+    depends_on:
+      subtitle-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8004/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  ai-service:
+    profiles: ["ai"]
+    build:
+      context: ./services/ai-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    networks:
+      - internal
+    environment:
+      DATABASE_URL: postgresql://ai_user:ai_pass@ai-db:5432/ai_db
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      SUBTITLE_SERVICE_URL: http://subtitle-service:8004
+      STORAGE_SERVICE_URL: http://storage-service:8003
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: "9000"
+      MINIO_USE_SSL: "false"
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+      MINIO_BUCKET_VIDEOS: movies-videos
+      WHISPER_MODEL: small
+      LIBRETRANSLATE_URL: http://libretranslate:5000
+      PORT: 8005
+    depends_on:
+      ai-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      subtitle-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  libretranslate:
+    profiles: ["ai"]
+    image: libretranslate/libretranslate:latest
+    restart: unless-stopped
+    networks:
+      - internal
+    environment:
+      LT_LOAD_ONLY: "en,pt,es"
+      LT_UPDATE_MODELS: "true"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+
+  subscription-service:
+    <<: *node-common
+    build:
+      context: ./services/subscription-service
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://subscription_user:subscription_pass@subscription-db:5432/subscription_db
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      PORT: 8006
+    depends_on:
+      subscription-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8006/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  notification-service:
+    <<: *node-common
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://notification_user:notification_pass@notification-db:5432/notification_db
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      SMTP_HOST: mailhog
+      SMTP_PORT: "1025"
+      SMTP_FROM: noreply@moviesystem.local
+      PORT: 8007
+    depends_on:
+      notification-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8007/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ─── API Gateway (único ponto de entrada externo) ─────────────────────────────
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    networks:
+      - internal
+      - external
     ports:
       - "8080:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: prod
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-storage:5432/${DB_NAME}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-
-      STORAGE_ENDPOINT: http://minio:9000
-      STORAGE_BUCKET: movies
-      STORAGE_ACCESS_KEY: ${MINIO_ROOT_USER}
-      STORAGE_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
-
-      SPRING_RABBITMQ_HOST: rabbitmq
-      SPRING_RABBITMQ_PORT: 5672
-      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
-      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      JWT_SECRET: 4977423ddea942f5a40b95f50a7af5f7dddfc5efefcecf9ec0cd071a420b72f7
+      REDIS_URL: redis://redis:6379
+      AUTH_SERVICE_URL: http://auth-service:8001
+      CATALOG_SERVICE_URL: http://catalog-service:8002
+      STORAGE_SERVICE_URL: http://storage-service:8003
+      SUBTITLE_SERVICE_URL: http://subtitle-service:8004
+      AI_SERVICE_URL: http://ai-service:8005
+      SUBSCRIPTION_SERVICE_URL: http://subscription-service:8006
+      NOTIFICATION_SERVICE_URL: http://notification-service:8007
+      PORT: 8080
     depends_on:
-      postgres-storage:
+      auth-service:
         condition: service_healthy
-      minio:
+      catalog-service:
         condition: service_healthy
-      rabbitmq:
-        condition: service_started
-    networks:
-      - backend
+      storage-service:
+        condition: service_healthy
+      subtitle-service:
+        condition: service_healthy
+      subscription-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq
+  # ─── Frontend ─────────────────────────────────────────────────────────────────
+
+  frontend:
+    build:
+      context: ./front-react
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    networks:
+      - external
     ports:
-      - "5672:5672"   # bind Spring
-      - "15672:15672" # web panel
+      - "3000:3000"
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
-    networks:
-      - backend
-
-  catalog-spring:
-    build: ./spring-catalog
-    container_name: catalog-spring-service
-    ports:
-      - "8081:8081"
+      VITE_API_URL: http://localhost:8080
     depends_on:
-      - storage-spring
-      - language-fastapi
-    environment:
-      SERVICES_LANGUAGE_URL: http://language-fastapi:8002
-      SERVICES_STORAGE_URL: ${STORAGE_URL}
-      SERVICES_SUBTITLE_URL: http://language-fastapi:8002
-    networks:
-      - backend
-
-  language-fastapi:
-    build: ./fastapi-language
-    container_name: language-fastapi-service
-    ports:
-      - "8002:8002"
-    volumes:
-      - ./fastapi-language:/app
-    environment:
-      SERVICE_NAME: ai-language-player-service
-      STORAGE_BASE_URL: http://storage-spring:8080
-      AI_PROVIDER: ${AI_PROVIDER:-mock}
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
-    networks:
-      - backend
-
-networks:
-  backend:
-    driver: bridge
+      - api-gateway

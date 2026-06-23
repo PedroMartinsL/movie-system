@@ -1,142 +1,153 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MovieGrid } from "./components/MovieGrid";
 import { PublishForm } from "./components/PublishForm";
 import { MovieModal } from "./components/MovieModal";
 import { Navbar } from "./components/Navbar";
 import { Hero } from "./components/Hero";
-import type { Movie } from "./types";
+import { LoginPage } from "./pages/Login";
+import { RegisterPage } from "./pages/Register";
+import { ProfilePage } from "./pages/Profile";
+import { ChoosePlanPage } from "./pages/ChoosePlan";
+import { useAuth } from "../context/AuthContext";
+import { catalog, Movie } from "../services/api";
+import { GENRE_LABELS } from "./types";
 
-const INITIAL_MOVIES: Movie[] = [
-  {
-    id: "1",
-    title: "Horizonte Perdido",
-    year: 2024,
-    genre: "DRAMA",
-    description:
-      "Em uma cidade submersa pela névoa eterna, um detetive investigado pelo seu passado descobre que a última testemunha de um crime nunca existiu — ou talvez jamais tenha morrido.",
-    imgUrl:
-      "https://images.unsplash.com/photo-1743431267979-43ace055f121?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&w=400&h=600&auto=format",
-    videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
-    idioma: "Português",
-    legenda: "Inglês",
-  },
-  {
-    id: "2",
-    title: "Sombras do Amanhã",
-    year: 2023,
-    genre: "SCI_FI",
-    description:
-      "No ano 2087, uma soldada descobre que as memórias que guarda não são suas. Agora ela deve escolher entre a missão e a verdade.",
-    imgUrl:
-      "https://images.unsplash.com/photo-1633885274919-04b5af171f8c?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&w=400&h=600&auto=format",
-    videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
-    idioma: "Inglês",
-    legenda: "Português",
-  },
-  {
-    id: "3",
-    title: "O Último Ato",
-    year: 2024,
-    genre: "HORROR",
-    description:
-      "Uma atriz de teatro é acusada de matar seu co-protagonista durante uma peça ao vivo. Mas as câmeras mostram algo impossível.",
-    imgUrl:
-      "https://images.unsplash.com/photo-1778372670061-e84b57764aec?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&w=400&h=600&auto=format",
-    videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
-    idioma: "Português",
-    legenda: "Sem legenda",
-  },
-  {
-    id: "4",
-    title: "Raízes do Caos",
-    year: 2023,
-    genre: "ACTION",
-    description:
-      "Uma família dividida pela guerra civil de um país fictício reconstrói sua história a partir de cartas enterradas há cinquenta anos.",
-    imgUrl:
-      "https://images.unsplash.com/photo-1629278357549-b413116d211c?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&w=400&h=600&auto=format",
-    videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
-    idioma: "Espanhol",
-    legenda: "Português",
-  },
-  {
-    id: "5",
-    title: "Luz Negra",
-    year: 2024,
-    genre: "HORROR",
-    description:
-      "Uma família se muda para uma casa onde a iluminação elétrica nunca funciona depois da meia-noite. O que mora na escuridão aprende a se adaptar.",
-    imgUrl:
-      "https://images.unsplash.com/photo-1692553041081-6c4e2cbd30d7?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&w=400&h=600&auto=format",
-    videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
-    idioma: "Inglês",
-    legenda: "Português",
-  },
-  {
-    id: "6",
-    title: "Cinema Paralelo",
-    year: 2022,
-    genre: "ROMANCE",
-    description:
-      "Dois projecionistas em salas de cinema opostas na mesma rua começam a se comunicar através dos filmes que exibem — sem nunca se encontrar pessoalmente.",
-    imgUrl:
-      "https://images.unsplash.com/photo-1762417419967-d5ccd2ebe463?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&w=400&h=600&auto=format",
-    videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
-    idioma: "Francês",
-    legenda: "Português",
-  },
-];
-
-type Page = "home" | "publish";
+type Page = "home" | "publish" | "login" | "register" | "profile";
 
 export default function App() {
+  const { user, loading: authLoading, logout, loginWithTokens } = useAuth();
   const [page, setPage] = useState<Page>("home");
-  const [movies, setMovies] = useState<Movie[]>(INITIAL_MOVIES);
+  const [showPlans, setShowPlans] = useState(false);
+  const [movies, setMovies] = useState<Movie[]>([]);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [activeGenre, setActiveGenre] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+  const [loadingMovies, setLoadingMovies] = useState(false);
 
-  const filteredMovies = movies.filter((m) => {
-    const matchesGenre = activeGenre === "ALL" || m.genre === activeGenre;
-    const matchesSearch =
-      !searchQuery ||
-      m.title.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesGenre && matchesSearch;
-  });
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const accessToken = params.get("accessToken");
+    const refreshToken = params.get("refreshToken");
+    if (accessToken && refreshToken) {
+      window.history.replaceState({}, "", "/");
+      loginWithTokens(accessToken, refreshToken).catch(console.error);
+    }
+  }, []);
+
+  function handleNavigate(p: "home" | "publish") {
+    if (p === "publish" && !user) {
+      setPage("login");
+      return;
+    }
+    setPage(p);
+  }
+
+  useEffect(() => {
+    if (!user) return;
+    setLoadingMovies(true);
+    catalog
+      .list({
+        search: searchQuery || undefined,
+        genre: activeGenre !== "ALL" ? activeGenre : undefined,
+      })
+      .then((res) => setMovies(res.data))
+      .catch(console.error)
+      .finally(() => setLoadingMovies(false));
+  }, [user, searchQuery, activeGenre]);
 
   function handlePublish(movie: Movie) {
     setMovies((prev) => [movie, ...prev]);
     setPage("home");
   }
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Carregando...</p>
+      </div>
+    );
+  }
+
+  if (showPlans) {
+    return <ChoosePlanPage onSuccess={() => { setShowPlans(false); setPage("home"); }} />;
+  }
+
+  if (!user) {
+    if (page === "register") {
+      return (
+        <RegisterPage
+          onNavigateLogin={() => setPage("login")}
+          onSuccess={() => setShowPlans(true)}
+        />
+      );
+    }
+    return (
+      <LoginPage
+        onNavigateRegister={() => setPage("register")}
+        onSuccess={() => setPage("home")}
+      />
+    );
+  }
+
   return (
-    /* MARKER-MAKE-KIT-INVOKED */
-    <div className="min-h-screen bg-background text-foreground" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div
+      className="min-h-screen bg-background text-foreground"
+      style={{ fontFamily: "'Inter', sans-serif" }}
+    >
       <Navbar
-        page={page}
-        onNavigate={setPage}
+        page={page as "home" | "publish"}
+        onNavigate={handleNavigate}
+        onNavigateProfile={() => setPage("profile")}
         searchQuery={searchQuery}
         onSearch={setSearchQuery}
+        user={user}
+        onLogout={logout}
       />
 
       {page === "home" && (
         <>
-          <Hero movie={movies[0]} onSelect={setSelectedMovie} />
+          {movies[0] && (
+            <Hero movie={movies[0] as any} onSelect={(m) => setSelectedMovie(m as Movie)} />
+          )}
           <main className="max-w-7xl mx-auto px-4 py-12">
             <GenreFilter active={activeGenre} onChange={setActiveGenre} />
 
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-foreground" style={{ fontFamily: "'Playfair Display', serif" }}>
+              <h2
+                className="text-foreground"
+                style={{ fontFamily: "'Playfair Display', serif" }}
+              >
                 Catálogo
-                <span className="text-muted-foreground ml-2" style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.9rem" }}>
-                  ({filteredMovies.length})
+                <span
+                  className="text-muted-foreground ml-2"
+                  style={{
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  ({movies.length})
                 </span>
               </h2>
             </div>
 
-            <MovieGrid movies={filteredMovies} onSelect={setSelectedMovie} />
+            {loadingMovies ? (
+              <p className="text-muted-foreground text-sm">Carregando filmes...</p>
+            ) : (
+              <MovieGrid
+                movies={movies as any}
+                onSelect={(m) => setSelectedMovie(m as Movie)}
+              />
+            )}
           </main>
         </>
+      )}
+
+      {page === "profile" && (
+        <ProfilePage onBack={() => setPage("home")} />
+      )}
+
+      {showPlans && (
+        <ChoosePlanPage onSuccess={() => { setShowPlans(false); setPage("home"); }} />
       )}
 
       {page === "publish" && (
@@ -146,21 +157,27 @@ export default function App() {
       )}
 
       {selectedMovie && (
-        <MovieModal movie={selectedMovie} onClose={() => setSelectedMovie(null)} />
+        <MovieModal
+          movie={selectedMovie as any}
+          onClose={() => setSelectedMovie(null)}
+        />
       )}
     </div>
   );
 }
-
-import type { Genre } from "./types";
-import { GENRE_LABELS } from "./types";
 
 const ALL_GENRES: Array<{ key: string; label: string }> = [
   { key: "ALL", label: "Todos" },
   ...Object.entries(GENRE_LABELS).map(([key, label]) => ({ key, label })),
 ];
 
-function GenreFilter({ active, onChange }: { active: string; onChange: (g: string) => void }) {
+function GenreFilter({
+  active,
+  onChange,
+}: {
+  active: string;
+  onChange: (g: string) => void;
+}) {
   return (
     <div className="flex gap-2 flex-wrap mb-8">
       {ALL_GENRES.map(({ key, label }) => (

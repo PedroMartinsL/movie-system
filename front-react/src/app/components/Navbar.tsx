@@ -1,16 +1,19 @@
-import { Film, Search, PlusCircle, Home } from "lucide-react";
-import type { Movie } from "../types";
+import { Film, Search, PlusCircle, Home, LogOut } from "lucide-react";
+import type { AuthUser } from "../../services/api";
 
 type Page = "home" | "publish";
 
 interface NavbarProps {
   page: Page;
   onNavigate: (p: Page) => void;
+  onNavigateProfile: () => void;
   searchQuery: string;
   onSearch: (q: string) => void;
+  user?: AuthUser | null;
+  onLogout?: () => void;
 }
 
-export function Navbar({ page, onNavigate, searchQuery, onSearch }: NavbarProps) {
+export function Navbar({ page, onNavigate, onNavigateProfile, searchQuery, onSearch, user, onLogout }: NavbarProps) {
   return (
     <header
       className="sticky top-0 z-50 border-b border-border"
@@ -39,7 +42,7 @@ export function Navbar({ page, onNavigate, searchQuery, onSearch }: NavbarProps)
               type="text"
               value={searchQuery}
               onChange={(e) => onSearch(e.target.value)}
-              placeholder="Buscar filmes ou diretores..."
+              placeholder="Buscar filmes..."
               className="w-full pl-9 pr-4 py-2 rounded-full border border-border bg-secondary text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
             />
           </div>
@@ -49,25 +52,47 @@ export function Navbar({ page, onNavigate, searchQuery, onSearch }: NavbarProps)
           <button
             onClick={() => onNavigate("home")}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-colors ${
-              page === "home"
-                ? "text-primary"
-                : "text-muted-foreground hover:text-foreground"
+              page === "home" ? "text-primary" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <Home size={16} />
             <span className="hidden sm:inline">Início</span>
           </button>
-          <button
-            onClick={() => onNavigate("publish")}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm transition-all duration-200 ${
-              page === "publish"
-                ? "bg-primary text-primary-foreground"
-                : "bg-primary text-primary-foreground hover:opacity-90"
-            }`}
-          >
-            <PlusCircle size={16} />
-            <span>Publicar Filme</span>
-          </button>
+
+          {user?.role === "ADMIN" && (
+            <button
+              onClick={() => onNavigate("publish")}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm transition-all duration-200 ${
+                page === "publish"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-primary text-primary-foreground hover:opacity-90"
+              }`}
+            >
+              <PlusCircle size={16} />
+              <span>Publicar Filme</span>
+            </button>
+          )}
+
+          {user && (
+            <div className="flex items-center gap-2 ml-2">
+              <button
+                onClick={onNavigateProfile}
+                className="hidden sm:flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-xs transition-colors"
+              >
+                {user.name}
+                {user.role === "ADMIN" && (
+                  <span className="px-1.5 py-0.5 rounded text-xs bg-primary/20 text-primary">ADMIN</span>
+                )}
+              </button>
+              <button
+                onClick={onLogout}
+                className="p-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                title="Sair"
+              >
+                <LogOut size={16} />
+              </button>
+            </div>
+          )}
         </nav>
       </div>
     </header>

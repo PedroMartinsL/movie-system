@@ -2,6 +2,7 @@ import { X, Globe, Calendar, Subtitles, Play } from "lucide-react";
 import type { Movie } from "../types";
 import { GENRE_LABELS } from "../types";
 import { useEffect, useState } from "react";
+import { storage, subtitles as subtitlesApi, mediaUrl, type SubtitleTrack } from "../../services/api";
 
 interface MovieModalProps {
   movie: Movie;
@@ -10,6 +11,19 @@ interface MovieModalProps {
 
 export function MovieModal({ movie, onClose }: MovieModalProps) {
   const [showVideo, setShowVideo] = useState(false);
+  const [streamUrl, setStreamUrl] = useState<string | null>(null);
+  const [loadingStream, setLoadingStream] = useState(false);
+  const [tracks, setTracks] = useState<SubtitleTrack[]>([]);
+
+  useEffect(() => {
+    subtitlesApi.list(movie.id).then(setTracks).catch(() => {});
+  }, [movie.id]);
+
+  async function handlePlay() {
+    if (!movie.id || !movie.videoUrl) return;
+    setStreamUrl(mediaUrl(`/storage/stream/${movie.id}`));
+    setShowVideo(true);
+  }
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -39,7 +53,7 @@ export function MovieModal({ movie, onClose }: MovieModalProps) {
         <div className="relative overflow-hidden" style={{ height: "280px", background: "#000" }}>
           {showVideo ? (
             <video
-              src={movie.videoUrl}
+              src={streamUrl ?? undefined}
               controls
               autoPlay
               className="w-full h-full object-contain"
@@ -47,7 +61,7 @@ export function MovieModal({ movie, onClose }: MovieModalProps) {
           ) : (
             <>
               <img
-                src={movie.imgUrl}
+                src={mediaUrl(movie.imgUrl) || undefined}
                 alt={movie.title}
                 className="w-full h-full object-cover"
                 style={{ filter: "brightness(0.45)" }}
@@ -57,14 +71,18 @@ export function MovieModal({ movie, onClose }: MovieModalProps) {
                 style={{ background: "linear-gradient(to top, var(--card) 0%, transparent 55%)" }}
               />
               <button
-                onClick={() => setShowVideo(true)}
-                className="absolute inset-0 flex items-center justify-center group"
+                onClick={handlePlay}
+                disabled={loadingStream}
+                className="absolute inset-0 flex items-center justify-center group disabled:cursor-wait"
               >
                 <div
                   className="w-16 h-16 rounded-full flex items-center justify-center border-2 border-primary group-hover:bg-primary transition-all duration-200"
                   style={{ background: "rgba(10,10,11,0.7)" }}
                 >
-                  <Play size={24} className="text-primary group-hover:text-primary-foreground" fill="currentColor" />
+                  {loadingStream
+                    ? <span className="text-primary text-xs">...</span>
+                    : <Play size={24} className="text-primary group-hover:text-primary-foreground" fill="currentColor" />
+                  }
                 </div>
               </button>
               <div className="absolute bottom-4 left-6 right-14">
@@ -95,12 +113,15 @@ export function MovieModal({ movie, onClose }: MovieModalProps) {
               <Globe size={15} />
               {movie.idioma}
             </span>
-            {movie.legenda && (
-              <span className="flex items-center gap-1.5 text-muted-foreground">
-                <Subtitles size={15} />
-                Legenda: {movie.legenda}
-              </span>
-            )}
+            <span className="flex items-center gap-1.5 text-muted-foreground">
+              <Subtitles size={15} />
+              {tracks.length > 0
+                ? `Legendas: ${tracks.map((t: SubtitleTrack) => t.language_label).join(", ")}`
+                : movie.status === "PROCESSING"
+                  ? "Legendas sendo processadas..."
+                  : "Sem legendas"
+              }
+            </span>
           </div>
 
           <p className="text-muted-foreground leading-relaxed" style={{ fontSize: "0.95rem" }}>

@@ -1,62 +1,59 @@
-HELP.md
-target/
-!.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+# Dependencies
+node_modules/
+**/node_modules/
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
+# Build outputs
+dist/
+**/dist/
 build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
-.vscode/
-.env
-
-# Docker volumes
-postgres-data/
-minio-data/
-
-# Spring
-springboot-storage/target/
-
-# IDEs
-.idea/
-.vscode/
-
-# Logs
-*.log
+**/build/
 
 # Python
 __pycache__/
-*.pyc
+**/__pycache__/
+*.py[cod]
 *.pyo
 *.pyd
-.test-tmp/
-
+.Python
+*.egg-info/
 .venv/
 venv/
+env/
 
-.git/
-.idea/
+# Environment variables
+.env
+.env.local
+.env.production
+**/.env
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
 .vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker volumes (não versionar dados locais)
+minio-data/
+postgres-data/
+
+# Prisma generated (gerado no build)
+**/node_modules/.prisma/
+
+# Frontend build artifacts
+front-react/dist/
+
+# Temporary files
+tmp/
+temp/
+*.tmp

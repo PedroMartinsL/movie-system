@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { Film, ArrowLeft, Upload } from "lucide-react";
 import type { Movie, Genre, Idioma } from "../types";
 import { GENRE_LABELS, IDIOMA_OPTIONS } from "../types";
+import { catalog, storage } from "../../services/api";
 
 interface PublishFormProps {
   onPublish: (movie: Movie) => void;
@@ -17,11 +18,10 @@ export function PublishForm({ onPublish, onCancel }: PublishFormProps) {
   const [posterFile, setPosterFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [posterPreview, setPosterPreview] = useState("");
-  const [videoPreview, setVideoPreview] = useState("");
   const [description, setDescription] = useState("");
   const [idioma, setIdioma] = useState<Idioma | "">("");
-  const [legenda, setLegenda] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   function validate() {
@@ -40,39 +40,44 @@ export function PublishForm({ onPublish, onCancel }: PublishFormProps) {
     setPosterPreview(file ? URL.createObjectURL(file) : "");
   }
 
-  function handleVideoChange(file: File | null) {
-    setVideoFile(file);
-    setVideoPreview(file ? URL.createObjectURL(file) : "");
-  }
-
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
     if (!posterFile || !videoFile) return;
 
-    const formData = new FormData();
-    formData.append("title", title.trim());
-    formData.append("year", year);
-    formData.append("genre", genre);
-    formData.append("description", description.trim());
-    formData.append("video", videoFile);
-    formData.append("thumbnail", posterFile);
+    setLoading(true);
+    setErrors({});
+    try {
+      // 1. Cria o registro do filme no catálogo
+      const movie = await catalog.create({
+        title: title.trim(),
+        description: description.trim(),
+        year: parseInt(year),
+        genre: genre as string,
+        idioma: idioma as string,
+        featured: false,
+      });
 
-    const movie: Movie = {
-      id: Date.now().toString(),
-      title: title.trim(),
-      year: parseInt(year),
-      genre: genre as Genre,
-      imgUrl: posterPreview,
-      videoUrl: videoPreview,
-      description: description.trim(),
-      idioma: idioma as Idioma,
-      legenda: legenda.trim() || "Sem legenda",
-    };
+      // 2. Faz upload do poster e do vídeo em paralelo
+      await Promise.all([
+        storage.uploadPoster(movie.id, posterFile),
+        storage.uploadVideo(movie.id, videoFile),
+      ]);
 
-    setSubmitted(true);
-    setTimeout(() => onPublish(movie), 1000);
+      // 3. Atualiza o catálogo marcando que poster e vídeo existem
+      const updated = await catalog.update(movie.id, {
+        posterId: movie.id,
+        videoId: movie.id,
+      } as any);
+
+      setSubmitted(true);
+      setTimeout(() => onPublish(updated), 1000);
+    } catch (err: any) {
+      setErrors({ _: err.message || "Erro ao publicar filme. Tente novamente." });
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (submitted) {
@@ -109,6 +114,12 @@ export function PublishForm({ onPublish, onCancel }: PublishFormProps) {
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        {errors._ && (
+          <div className="px-4 py-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+            {errors._}
+          </div>
+        )}
+
         <Field label="Título *" error={errors.title}>
           <input
             value={title}
@@ -155,15 +166,6 @@ export function PublishForm({ onPublish, onCancel }: PublishFormProps) {
           </select>
         </Field>
 
-        <Field label="Legenda">
-          <input
-            value={legenda}
-            onChange={(e) => setLegenda(e.target.value)}
-            placeholder="Ex: Português, Inglês, Sem legenda"
-            className={inputCls(false)}
-          />
-        </Field>
-
         <Field label="Descrição *" error={errors.description}>
           <textarea
             value={description}
@@ -194,7 +196,7 @@ export function PublishForm({ onPublish, onCancel }: PublishFormProps) {
           <input
             type="file"
             accept="video/*"
-            onChange={(e) => handleVideoChange(e.target.files?.[0] ?? null)}
+            onChange={(e) => setVideoFile(e.target.files?.[0] ?? null)}
             className={inputCls(!!errors.videoFile)}
           />
           {videoFile && (
@@ -202,21 +204,29 @@ export function PublishForm({ onPublish, onCancel }: PublishFormProps) {
           )}
         </Field>
 
+        {loading && (
+          <p className="text-muted-foreground text-sm text-center">
+            Enviando filme... isso pode levar alguns instantes.
+          </p>
+        )}
+
         <div className="flex gap-3 pt-2">
           <button
             type="button"
             onClick={onCancel}
-            className="px-6 py-3 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-primary transition-colors text-sm"
+            disabled={loading}
+            className="px-6 py-3 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-primary transition-colors text-sm disabled:opacity-50"
           >
             Cancelar
           </button>
           <button
             type="submit"
-            className="flex items-center gap-2 px-8 py-3 rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity text-sm"
+            disabled={loading}
+            className="flex items-center gap-2 px-8 py-3 rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity text-sm disabled:opacity-60"
             style={{ fontWeight: 500 }}
           >
             <Upload size={16} />
-            Publicar no Catálogo
+            {loading ? "Publicando..." : "Publicar no Catálogo"}
           </button>
         </div>
       </form>
@@ -230,7 +240,7 @@ function inputCls(hasError: boolean) {
   }`;
 }
 
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-foreground text-sm" style={{ fontWeight: 500 }}>{label}</label>

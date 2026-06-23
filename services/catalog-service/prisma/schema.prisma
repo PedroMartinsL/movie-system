@@ -1,0 +1,39 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Movie {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  year        Int
+  genre       Genre
+  idioma      String
+  posterId    String?
+  videoId     String?
+  status      MovieStatus @default(PROCESSING)
+  featured    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum Genre {
+  ACTION
+  DRAMA
+  COMEDY
+  HORROR
+  ROMANCE
+  SCI_FI
+}
+
+enum MovieStatus {
+  PROCESSING
+  READY
+  ERROR
+}
