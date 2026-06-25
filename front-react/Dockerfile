@@ -9,13 +9,13 @@ RUN npm run build
 
 FROM nginx:alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
-RUN cat > /etc/nginx/conf.d/default.conf << 'EOF'
+RUN cat <<EOF > /etc/nginx/conf.d/default.conf
 server {
     listen 3000;
     root /usr/share/nginx/html;
     index index.html;
     location / {
-        try_files $uri $uri/ /index.html;
+        try_files \$uri \$uri/ /index.html;
     }
 }
 EOF
