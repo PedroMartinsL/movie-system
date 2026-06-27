@@ -1,6 +1,6 @@
-<div align="center">
 
 # 💠 Cine Vault
+<div align="center">
 
 **Plataforma de streaming de filmes baseada em microsserviços**
 
