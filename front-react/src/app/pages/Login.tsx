@@ -36,7 +36,7 @@ export function LoginPage({ onNavigateRegister, onSuccess }: LoginPageProps) {
             <Film size={24} style={{ color: 'var(--primary-foreground)' }} />
           </div>
           <h1 className="text-foreground text-2xl" style={{ fontFamily: "'Playfair Display', serif" }}>
-            Movie System
+            Cine Vault
           </h1>
           <p className="text-muted-foreground text-sm mt-1">Faça login para continuar</p>
         </div>

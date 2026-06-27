@@ -58,7 +58,7 @@ export function RegisterPage({ onNavigateLogin, onSuccess }: RegisterPageProps) 
           <h1 className="text-foreground text-2xl" style={{ fontFamily: "'Playfair Display', serif" }}>
             Criar Conta
           </h1>
-          <p className="text-muted-foreground text-sm mt-1">Junte-se ao Movie System</p>
+          <p className="text-muted-foreground text-sm mt-1">Junte-se ao Cine Vault</p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">

@@ -51,6 +51,8 @@ function isAdmin(method: string, path: string): boolean {
 async function authHook(req: any, reply: any) {
   const { method, url } = req
 
+  console.log(`[GATEWAY] ${new Date().toISOString()} ${method} ${url}`)
+
   if (isPublic(method, url)) return
 
   if (isAdmin(method, url)) {

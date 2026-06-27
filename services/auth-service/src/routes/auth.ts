@@ -247,6 +247,12 @@ export async function authRoutes(app: FastifyInstance) {
         data: { token: refreshToken, userId: user.id, expiresAt: refreshExpiresAt() },
       })
 
+      console.log('\n========== GOOGLE OAUTH - JWT GERADO ==========')
+      console.log(`Usuário : ${user.email}`)
+      console.log(`Role    : ${user.role}`)
+      console.log(`Access Token:\n${accessToken}`)
+      console.log('================================================\n')
+
       return reply.redirect(
         `${FRONTEND_URL}?accessToken=${accessToken}&refreshToken=${refreshToken}`
       )

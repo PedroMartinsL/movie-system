@@ -32,7 +32,7 @@
 
 ### Nome
 
-**CineVault — Movie System**
+**CineVault - Movie System**
 
 ### Objetivo
 
