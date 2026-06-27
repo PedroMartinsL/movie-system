@@ -4,13 +4,13 @@
 
 **Plataforma de streaming de filmes baseada em microsserviços**
 
-![Preview](docs/preview.png)
+<img width="853" height="933" alt="image" src="https://github.com/user-attachments/assets/b03d9902-bc7c-4d5a-adb9-ee60f7ff4e1a" />
 
 </div>
 
 ---
 
-## 🩵 Arquitetura
+## 💠 Arquitetura
 
 ```
 Cliente (Browser)
@@ -54,7 +54,7 @@ Infra: RabbitMQ · Redis · MinIO · MailHog
 
 ---
 
-## 🩵 Fluxo JWT
+## 💠 Fluxo JWT
 
 ```
 Cliente → API Gateway
@@ -70,7 +70,7 @@ Cliente → API Gateway
 
 ---
 
-## 🩵 Como Rodar
+## 💠 Como Rodar
 
 ### Pré-requisitos
 - Docker Desktop
@@ -109,7 +109,7 @@ docker compose down
 
 ---
 
-## 🩵 Tornar-se ADMIN
+## 💠 Tornar-se ADMIN
 
 Por padrão todos os usuários são `NORMAL`. Para promover a ADMIN:
 
@@ -122,7 +122,7 @@ Apenas ADMINs podem publicar, editar e deletar filmes.
 
 ---
 
-## 🩵 Serviços
+## 💠 Serviços
 
 | Serviço | Porta | Responsabilidade |
 |---|---|---|
@@ -137,7 +137,7 @@ Apenas ADMINs podem publicar, editar e deletar filmes.
 
 ---
 
-## 🩵 Rotas do API Gateway
+## 💠 Rotas do API Gateway
 
 ### Auth
 | Método | Rota | Acesso |
@@ -181,7 +181,7 @@ Apenas ADMINs podem publicar, editar e deletar filmes.
 
 ---
 
-## 🩵 Fluxo de Legendas Automáticas
+## 💠 Fluxo de Legendas Automáticas
 
 ```
 Upload de vídeo pelo admin
@@ -200,7 +200,7 @@ ai-service consome o evento
 
 ---
 
-## 🩵 Stack Técnica
+## 💠 Stack Técnica
 
 | Camada | Tecnologias |
 |---|---|
