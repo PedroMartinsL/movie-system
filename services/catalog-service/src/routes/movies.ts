@@ -15,7 +15,7 @@ function buildMovieResponse(movie: any) {
     featured: movie.featured,
     imgUrl: movie.posterId ? `/storage/poster/${movie.id}` : null,
     videoUrl: movie.videoId ? `/storage/stream/${movie.id}` : null,
-    legenda: 'Verificando...',
+    legenda: null,
     createdAt: movie.createdAt,
   }
 }

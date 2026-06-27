@@ -64,11 +64,6 @@ function MovieCard({ movie, onSelect }: { movie: Movie; onSelect: (m: Movie) => 
             {movie.idioma}
           </span>
         </div>
-        {movie.legenda && movie.legenda !== "Sem legenda" && (
-          <p className="text-muted-foreground mt-1" style={{ fontSize: "0.7rem" }}>
-            Leg: {movie.legenda}
-          </p>
-        )}
       </div>
     </button>
   );
