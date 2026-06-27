@@ -24,11 +24,10 @@ def transcribe_audio(audio_path: str) -> dict:
     segments = []
     if hasattr(transcription, "segments") and transcription.segments:
         for s in transcription.segments:
-            segments.append({
-                "start": s.start,
-                "end": s.end,
-                "text": s.text,
-            })
+            if isinstance(s, dict):
+                segments.append({"start": s.get("start", 0), "end": s.get("end", 0), "text": s.get("text", "")})
+            else:
+                segments.append({"start": s.start, "end": s.end, "text": s.text})
 
     language = getattr(transcription, "language", "en") or "en"
     return {"language": language, "segments": segments}
