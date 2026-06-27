@@ -14,10 +14,36 @@ export function MovieModal({ movie, onClose }: MovieModalProps) {
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
   const [loadingStream, setLoadingStream] = useState(false);
   const [tracks, setTracks] = useState<SubtitleTrack[]>([]);
+  const [trackBlobUrls, setTrackBlobUrls] = useState<{ language: string; label: string; url: string }[]>([]);
 
   useEffect(() => {
     subtitlesApi.list(movie.id).then(setTracks).catch(() => {});
   }, [movie.id]);
+
+  useEffect(() => {
+    if (!showVideo || tracks.length === 0) return;
+    let cancelled = false;
+    const urls: string[] = [];
+
+    Promise.all(
+      tracks
+        .filter((t) => t.status === "READY")
+        .map(async (t) => {
+          const data = await subtitlesApi.getContent(movie.id, t.language);
+          const blob = new Blob([data.content], { type: "text/vtt" });
+          const url = URL.createObjectURL(blob);
+          urls.push(url);
+          return { language: t.language, label: t.language_label, url };
+        })
+    ).then((result) => {
+      if (!cancelled) setTrackBlobUrls(result);
+    }).catch(() => {});
+
+    return () => {
+      cancelled = true;
+      urls.forEach((u) => URL.revokeObjectURL(u));
+    };
+  }, [showVideo, tracks, movie.id]);
 
   async function handlePlay() {
     if (!movie.id || !movie.videoUrl) return;
@@ -57,7 +83,18 @@ export function MovieModal({ movie, onClose }: MovieModalProps) {
               controls
               autoPlay
               className="w-full h-full object-contain"
-            />
+            >
+              {trackBlobUrls.map((t, i) => (
+                <track
+                  key={t.language}
+                  kind="subtitles"
+                  src={t.url}
+                  srcLang={t.language}
+                  label={t.label}
+                  default={i === 0}
+                />
+              ))}
+            </video>
           ) : (
             <>
               <img
