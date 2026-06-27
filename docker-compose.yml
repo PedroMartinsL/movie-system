@@ -295,7 +295,6 @@ services:
       retries: 10
 
   ai-service:
-    profiles: ["ai"]
     build:
       context: ./services/ai-service
       dockerfile: Dockerfile
@@ -313,8 +312,7 @@ services:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin123
       MINIO_BUCKET_VIDEOS: movies-videos
-      WHISPER_MODEL: small
-      LIBRETRANSLATE_URL: http://libretranslate:5000
+      GROQ_API_KEY: ${GROQ_API_KEY}
       PORT: 8005
     depends_on:
       ai-db:

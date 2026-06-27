@@ -6,7 +6,7 @@ import requests
 from minio import Minio
 from sqlalchemy.orm import Session
 from database import SessionLocal, ProcessingJob
-from whisper_service import transcribe_audio, segments_to_vtt
+from groq_service import transcribe_audio, segments_to_vtt
 from translation_service import translate_vtt, get_target_languages
 
 MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "minio")
