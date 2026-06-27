@@ -214,3 +214,4 @@ ai-service consome o evento
 | IA / Legendas | Groq API — Whisper large-v3-turbo |
 | Containers | Docker, Docker Compose |
 | Proxy | Nginx |
+---
