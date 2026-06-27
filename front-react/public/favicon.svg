@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="7" fill="#07090f"/>
+  <!-- sprocket top -->
+  <rect x="3" y="7" width="3.5" height="2.5" rx="0.8" fill="#06b6d4"/>
+  <rect x="9.5" y="7" width="3.5" height="2.5" rx="0.8" fill="#06b6d4"/>
+  <rect x="16" y="7" width="3.5" height="2.5" rx="0.8" fill="#06b6d4"/>
+  <rect x="22.5" y="7" width="3.5" height="2.5" rx="0.8" fill="#06b6d4"/>
+  <!-- film frame -->
+  <rect x="5" y="9.5" width="22" height="13" rx="1.5" fill="none" stroke="#06b6d4" stroke-width="1.5"/>
+  <!-- play button -->
+  <polygon points="13,12.5 13,19.5 21,16" fill="#06b6d4"/>
+  <!-- sprocket bottom -->
+  <rect x="3" y="22.5" width="3.5" height="2.5" rx="0.8" fill="#06b6d4"/>
+  <rect x="9.5" y="22.5" width="3.5" height="2.5" rx="0.8" fill="#06b6d4"/>
+  <rect x="16" y="22.5" width="3.5" height="2.5" rx="0.8" fill="#06b6d4"/>
+  <rect x="22.5" y="22.5" width="3.5" height="2.5" rx="0.8" fill="#06b6d4"/>
+</svg>
