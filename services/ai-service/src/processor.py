@@ -33,7 +33,7 @@ def process_video(job_id: str, movie_id: str, bucket_name: str, object_name: str
 
         with tempfile.TemporaryDirectory() as tmpdir:
             video_path = os.path.join(tmpdir, "video.mp4")
-            audio_path = os.path.join(tmpdir, "audio.wav")
+            audio_path = os.path.join(tmpdir, "audio.mp3")
 
             print(f"[AI] Baixando vídeo: {bucket_name}/{object_name}")
             minio_client.fget_object(bucket_name, object_name, video_path)
@@ -41,8 +41,8 @@ def process_video(job_id: str, movie_id: str, bucket_name: str, object_name: str
             print("[AI] Extraindo áudio com FFmpeg")
             subprocess.run([
                 "ffmpeg", "-i", video_path,
-                "-vn", "-acodec", "pcm_s16le",
-                "-ar", "16000", "-ac", "1",
+                "-vn", "-acodec", "libmp3lame",
+                "-ar", "16000", "-ac", "1", "-b:a", "16k",
                 audio_path, "-y"
             ], check=True, capture_output=True)
 
