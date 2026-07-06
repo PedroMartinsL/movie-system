@@ -23,16 +23,19 @@ class SubtitleSource(str, enum.Enum):
     MANUAL = "MANUAL"
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# A "estante de legendas": cada linha é UMA legenda (de um filme, num idioma).
+# ═══════════════════════════════════════════════════════════════════════════
 class SubtitleTrack(Base):
     __tablename__ = "subtitle_tracks"
 
     id = Column(String, primary_key=True)
-    movie_id = Column(String, nullable=False, index=True)
-    language = Column(String, nullable=False)
-    language_label = Column(String, nullable=False)
-    content = Column(Text, nullable=True)  # Conteúdo VTT
-    status = Column(SAEnum(SubtitleStatus), default=SubtitleStatus.PROCESSING)
-    source = Column(SAEnum(SubtitleSource), default=SubtitleSource.AI_GENERATED)
+    movie_id = Column(String, nullable=False, index=True)  # de qual filme é
+    language = Column(String, nullable=False)              # código: pt, en, es...
+    language_label = Column(String, nullable=False)        # nome amigável: Português...
+    content = Column(Text, nullable=True)  # o texto da legenda (formato VTT)
+    status = Column(SAEnum(SubtitleStatus), default=SubtitleStatus.PROCESSING)  # PROCESSING/READY/ERROR
+    source = Column(SAEnum(SubtitleSource), default=SubtitleSource.AI_GENERATED)  # feita pela IA ou manual
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 

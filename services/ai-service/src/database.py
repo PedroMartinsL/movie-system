@@ -10,14 +10,18 @@ SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# O "ai-db": tabela que guarda o STATUS de cada processamento de vídeo.
+# É o "caderninho" do cérebro — o admin consulta em /ai/jobs.
+# ═══════════════════════════════════════════════════════════════════════════
 class ProcessingJob(Base):
     __tablename__ = "processing_jobs"
 
     id = Column(String, primary_key=True)
-    movie_id = Column(String, nullable=False, index=True)
-    status = Column(String, default="QUEUED")  # QUEUED, PROCESSING, COMPLETED, ERROR
-    source_language = Column(String, nullable=True)
-    error_message = Column(Text, nullable=True)
+    movie_id = Column(String, nullable=False, index=True)   # de qual filme é
+    status = Column(String, default="QUEUED")  # QUEUED → PROCESSING → COMPLETED / ERROR
+    source_language = Column(String, nullable=True)  # idioma detectado pela IA
+    error_message = Column(Text, nullable=True)      # se deu erro, guarda o motivo
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 

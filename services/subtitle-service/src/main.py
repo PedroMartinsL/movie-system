@@ -59,12 +59,14 @@ class SubtitleResponse(BaseModel):
 
 # ─── Rotas ───────────────────────────────────────────────────────────────────
 
+# LISTAR: devolve todas as legendas de um filme (usado pra montar o menu de idiomas).
 @app.get("/subtitles/{movie_id}", response_model=List[SubtitleResponse])
 def list_subtitles(movie_id: str, db: Session = Depends(get_db)):
     tracks = db.query(SubtitleTrack).filter(SubtitleTrack.movie_id == movie_id).all()
     return tracks
 
 
+# STATUS: mostra quantas legendas o filme tem e o estado de cada idioma.
 @app.get("/subtitles/{movie_id}/status")
 def subtitle_status(movie_id: str, db: Session = Depends(get_db)):
     tracks = db.query(SubtitleTrack).filter(SubtitleTrack.movie_id == movie_id).all()
@@ -75,6 +77,8 @@ def subtitle_status(movie_id: str, db: Session = Depends(get_db)):
     }
 
 
+# ENTREGAR PRO PLAYER: devolve o conteúdo da legenda de um idioma.
+# Só entrega se estiver READY (pronta) — senão, retorna 404.
 @app.get("/subtitles/{movie_id}/{language}")
 def get_subtitle_content(movie_id: str, language: str, db: Session = Depends(get_db)):
     track = db.query(SubtitleTrack).filter(
@@ -89,8 +93,10 @@ def get_subtitle_content(movie_id: str, language: str, db: Session = Depends(get
     return {"content": track.content, "language": language, "language_label": track.language_label}
 
 
+# GUARDAR: é aqui que o ai-service salva cada legenda gerada (POST /subtitles).
 @app.post("/subtitles", status_code=201)
 def create_subtitle(body: SubtitleCreate, db: Session = Depends(get_db)):
+    # Verifica se já existe legenda desse filme + idioma.
     existing = db.query(SubtitleTrack).filter(
         SubtitleTrack.movie_id == body.movie_id,
         SubtitleTrack.language == body.language,
@@ -98,6 +104,7 @@ def create_subtitle(body: SubtitleCreate, db: Session = Depends(get_db)):
 
     label = LANGUAGE_LABELS.get(body.language, body.language)
 
+    # Se já existe: ATUALIZA (isso evita legendas duplicadas). → "upsert"
     if existing:
         existing.content = body.content
         existing.status = body.status
@@ -106,6 +113,7 @@ def create_subtitle(body: SubtitleCreate, db: Session = Depends(get_db)):
         db.refresh(existing)
         return {"id": existing.id, "movie_id": existing.movie_id, "language": existing.language}
 
+    # Se não existe: CRIA uma nova legenda.
     track = SubtitleTrack(
         id=str(uuid.uuid4()),
         movie_id=body.movie_id,
@@ -121,6 +129,7 @@ def create_subtitle(body: SubtitleCreate, db: Session = Depends(get_db)):
     return {"id": track.id, "movie_id": track.movie_id, "language": track.language}
 
 
+# APAGAR: remove a legenda de um idioma de um filme.
 @app.delete("/subtitles/{movie_id}/{language}", status_code=204)
 def delete_subtitle(movie_id: str, language: str, db: Session = Depends(get_db)):
     track = db.query(SubtitleTrack).filter(

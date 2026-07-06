@@ -26,21 +26,26 @@ minio_client = Minio(
 )
 
 
+# O PASSO A PASSO PRINCIPAL: recebe um vídeo e gera todas as legendas.
 def process_video(job_id: str, movie_id: str, bucket_name: str, object_name: str):
     db = SessionLocal()
     try:
+        # Marca o job como PROCESSING (começou a trabalhar).
         job = db.query(ProcessingJob).filter(ProcessingJob.id == job_id).first()
         if job:
             job.status = "PROCESSING"
             db.commit()
 
+        # Cria uma pasta temporária (apagada automaticamente no fim).
         with tempfile.TemporaryDirectory() as tmpdir:
             video_path = os.path.join(tmpdir, "video.mp4")
             audio_path = os.path.join(tmpdir, "audio.mp3")
 
+            # PASSO 1: baixa o vídeo do MinIO (storage de arquivos).
             print(f"[AI] Baixando vídeo: {bucket_name}/{object_name}")
             minio_client.fget_object(bucket_name, object_name, video_path)
 
+            # PASSO 2: extrai só o áudio do vídeo com o FFmpeg (vira um MP3 leve).
             print("[AI] Extraindo áudio com FFmpeg")
             subprocess.run([
                 "ffmpeg", "-i", video_path,
@@ -49,6 +54,8 @@ def process_video(job_id: str, movie_id: str, bucket_name: str, object_name: str
                 audio_path, "-y"
             ], check=True, capture_output=True)
 
+            # PASSO 3: transcreve o áudio com a IA (Whisper/Groq).
+            # Retorna o idioma detectado e a legenda no formato VTT.
             print("[AI] Transcrevendo com Whisper")
             result = transcribe_audio(audio_path)
             source_lang = result.get("language", "en")
@@ -57,18 +64,20 @@ def process_video(job_id: str, movie_id: str, bucket_name: str, object_name: str
 
             print(f"[AI] Idioma detectado: {source_lang}")
 
-            # Salva legenda no idioma original
+            # PASSO 4: salva a legenda no idioma original (manda pro subtitle-service).
             _post_subtitle(movie_id, source_lang, original_vtt)
 
-            # Traduz para outros idiomas
+            # PASSO 5: traduz para os outros idiomas (LibreTranslate) e salva cada um.
             for target_lang in get_target_languages(source_lang):
                 print(f"[AI] Traduzindo para: {target_lang}")
                 translated_vtt = translate_vtt(original_vtt, source_lang, target_lang)
                 _post_subtitle(movie_id, target_lang, translated_vtt)
 
-            # Notifica que as legendas ficaram prontas (consumido pelo notification-service)
+            # PASSO 6: avisa (via RabbitMQ) que as legendas ficaram prontas.
+            # O notification-service escuta esse evento e manda o e-mail.
             _publish_event("subtitles.ready", {"movieId": movie_id, "language": source_lang})
 
+            # PASSO 7: deu tudo certo → marca o job como COMPLETED.
             if job:
                 job.status = "COMPLETED"
                 job.source_language = source_lang
@@ -77,6 +86,7 @@ def process_video(job_id: str, movie_id: str, bucket_name: str, object_name: str
         print(f"[AI] Job {job_id} concluído com sucesso")
 
     except Exception as e:
+        # Se qualquer passo falhar, registra o erro no job (status ERROR).
         print(f"[AI] Erro no job {job_id}: {e}")
         if job:
             job.status = "ERROR"
@@ -86,6 +96,7 @@ def process_video(job_id: str, movie_id: str, bucket_name: str, object_name: str
         db.close()
 
 
+# Publica um evento no RabbitMQ (usado pra avisar outros serviços).
 def _publish_event(routing_key: str, payload: dict):
     try:
         params = pika.URLParameters(RABBITMQ_URL)
@@ -104,6 +115,7 @@ def _publish_event(routing_key: str, payload: dict):
         print(f"[AI] Erro ao publicar evento {routing_key}: {e}")
 
 
+# Envia uma legenda pronta para o subtitle-service guardar (POST /subtitles).
 def _post_subtitle(movie_id: str, language: str, content: str):
     try:
         resp = requests.post(
