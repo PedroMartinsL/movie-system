@@ -16,6 +16,10 @@ export async function startConsumer() {
   await channel.assertQueue('notifications.subscription.created', { durable: true })
   await channel.bindQueue('notifications.subscription.created', 'movie-events', 'subscription.created')
 
+  // Fila para novo filme no catálogo
+  await channel.assertQueue('notifications.movie.created', { durable: true })
+  await channel.bindQueue('notifications.movie.created', 'movie-events', 'movie.created')
+
   channel.consume('notifications.subtitles.ready', async (msg) => {
     if (!msg) return
     try {
@@ -60,6 +64,30 @@ export async function startConsumer() {
       channel.ack(msg)
     } catch (err) {
       console.error('Erro ao processar subscription.created:', err)
+      channel.nack(msg, false, false)
+    }
+  })
+
+  channel.consume('notifications.movie.created', async (msg) => {
+    if (!msg) return
+    try {
+      const event = JSON.parse(msg.content.toString())
+      const { title } = event
+
+      const html = `
+        <h2>Novo filme disponível!</h2>
+        <p>O filme <strong>${title}</strong> já está disponível no <strong>CineVault</strong>.</p>
+        <p>Acesse a plataforma e comece a assistir agora mesmo!</p>
+      `
+      await sendEmail('user@moviesystem.local', `O filme ${title} já está disponível no CineVault`, html)
+
+      await prisma.notificationLog.create({
+        data: { event: 'movie.created', payload: msg.content.toString(), recipient: 'user@moviesystem.local', status: 'SENT' },
+      })
+
+      channel.ack(msg)
+    } catch (err) {
+      console.error('Erro ao processar movie.created:', err)
       channel.nack(msg, false, false)
     }
   })

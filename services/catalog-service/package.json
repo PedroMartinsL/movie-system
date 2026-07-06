@@ -10,9 +10,11 @@
   "dependencies": {
     "@fastify/cors": "^9.0.1",
     "@prisma/client": "^5.22.0",
+    "amqplib": "^0.10.4",
     "fastify": "^4.28.1"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.10.5",
     "@types/node": "^20.17.6",
     "prisma": "^5.22.0",
     "typescript": "^5.6.3"

@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify'
 import { prisma } from '../db'
+import { publishEvent } from '../rabbitmq'
 
 const STORAGE_URL = process.env.STORAGE_SERVICE_URL || 'http://storage-service:8003'
 
@@ -116,6 +117,9 @@ export async function movieRoutes(app: FastifyInstance) {
         status: videoId ? 'PROCESSING' : 'READY',
       },
     })
+
+    // Notifica que um novo filme entrou no catálogo (consumido pelo notification-service)
+    await publishEvent('movie.created', { movieId: movie.id, title: movie.title, genre: movie.genre })
 
     return reply.status(201).send(buildMovieResponse(movie))
   })
