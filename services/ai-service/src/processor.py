@@ -1,8 +1,10 @@
 import os
 import uuid
+import json
 import tempfile
 import subprocess
 import requests
+import pika
 from minio import Minio
 from sqlalchemy.orm import Session
 from database import SessionLocal, ProcessingJob
@@ -14,6 +16,7 @@ MINIO_PORT = int(os.getenv("MINIO_PORT", "9000"))
 MINIO_USER = os.getenv("MINIO_ROOT_USER", "minioadmin")
 MINIO_PASS = os.getenv("MINIO_ROOT_PASSWORD", "minioadmin123")
 SUBTITLE_SERVICE_URL = os.getenv("SUBTITLE_SERVICE_URL", "http://subtitle-service:8004")
+RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@rabbitmq:5672")
 
 minio_client = Minio(
     f"{MINIO_ENDPOINT}:{MINIO_PORT}",
@@ -63,6 +66,9 @@ def process_video(job_id: str, movie_id: str, bucket_name: str, object_name: str
                 translated_vtt = translate_vtt(original_vtt, source_lang, target_lang)
                 _post_subtitle(movie_id, target_lang, translated_vtt)
 
+            # Notifica que as legendas ficaram prontas (consumido pelo notification-service)
+            _publish_event("subtitles.ready", {"movieId": movie_id, "language": source_lang})
+
             if job:
                 job.status = "COMPLETED"
                 job.source_language = source_lang
@@ -78,6 +84,24 @@ def process_video(job_id: str, movie_id: str, bucket_name: str, object_name: str
             db.commit()
     finally:
         db.close()
+
+
+def _publish_event(routing_key: str, payload: dict):
+    try:
+        params = pika.URLParameters(RABBITMQ_URL)
+        connection = pika.BlockingConnection(params)
+        channel = connection.channel()
+        channel.exchange_declare(exchange="movie-events", exchange_type="topic", durable=True)
+        channel.basic_publish(
+            exchange="movie-events",
+            routing_key=routing_key,
+            body=json.dumps(payload),
+            properties=pika.BasicProperties(delivery_mode=2),
+        )
+        connection.close()
+        print(f"[AI] Evento publicado: {routing_key} -> {payload}")
+    except Exception as e:
+        print(f"[AI] Erro ao publicar evento {routing_key}: {e}")
 
 
 def _post_subtitle(movie_id: str, language: str, content: str):
